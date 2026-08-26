@@ -1,0 +1,17 @@
+[
+  { "id": 1,  "category": "film",      "text": "The last film that genuinely surprised you" },
+  { "id": 2,  "category": "lifestyle", "text": "Sell me on a hobby you're bad at" },
+  { "id": 3,  "category": "explain",   "text": "Explain the internet to someone from 1850" },
+  { "id": 4,  "category": "lifestyle", "text": "A rule you follow that nobody asked you to" },
+  { "id": 5,  "category": "hot-take",  "text": "The most overrated food, and be specific" },
+  { "id": 6,  "category": "explain",   "text": "Teach me something in thirty seconds" },
+  { "id": 7,  "category": "film",      "text": "Defend a movie everyone else hated" },
+  { "id": 8,  "category": "hot-take",  "text": "The worst advice you were ever given" },
+  { "id": 9,  "category": "lifestyle", "text": "Convince me to read your favourite book" },
+  { "id": 10, "category": "hot-take",  "text": "One thing you've changed your mind about" },
+  { "id": 11, "category": "explain",   "text": "Describe your job to a curious ten-year-old" },
+  { "id": 12, "category": "film",      "text": "A scene you rewatch more than the film itself" },
+  { "id": 13, "category": "lifestyle", "text": "Something you gave up that you don't miss" },
+  { "id": 14, "category": "hot-take",  "text": "A popular opinion you quietly disagree with" },
+  { "id": 15, "category": "explain",   "text": "How would you get someone into your favourite subject" }
+]

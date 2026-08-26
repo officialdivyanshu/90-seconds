@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>90 SECONDS — talk before you think</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F5DC;
+  --ink:#000000;
+  --white:#FFFFFF;
+  --teal:#00C2CB;
+  --magenta:#FF00FF;
+  --yellow:#FFD700;
+  --stroke:3px solid var(--ink);
+  --shadow-1:4px 4px 0 var(--ink);
+  --shadow-2:8px 8px 0 var(--ink);
+  --shadow-3:12px 12px 0 var(--ink);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Archivo',sans-serif;
+  font-size:18px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:'Archivo Black',sans-serif;text-transform:uppercase;line-height:0.92;letter-spacing:-0.02em}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ---------- NAV ---------- */
+nav{
+  border-bottom:var(--stroke);
+  background:var(--paper);
+  position:sticky;top:0;z-index:100;
+}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{font-family:'Archivo Black',sans-serif;font-size:22px;letter-spacing:-0.04em;text-transform:uppercase}
+.logo span{background:var(--teal);border:var(--stroke);padding:2px 8px;margin-right:2px}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:14px;font-weight:700;text-transform:uppercase;text-decoration:none;color:var(--ink);letter-spacing:0.04em}
+.nav-links a:hover{background:var(--yellow);box-shadow:0 3px 0 var(--ink)}
+
+/* ---------- BUTTONS ---------- */
+.btn{
+  font-family:'Archivo',sans-serif;font-weight:700;text-transform:uppercase;
+  font-size:15px;letter-spacing:0.04em;
+  border:var(--stroke);background:var(--white);color:var(--ink);
+  padding:14px 26px;cursor:pointer;box-shadow:var(--shadow-1);
+  transition:transform .08s ease, box-shadow .08s ease;
+  display:inline-flex;align-items:center;gap:10px;min-height:48px;
+}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn:focus-visible{outline:4px solid var(--magenta);outline-offset:3px}
+.btn-primary{background:var(--teal)}
+.btn-loud{background:var(--magenta);color:var(--white)}
+.btn-yellow{background:var(--yellow)}
+.btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:var(--shadow-1);transform:none}
+
+/* ---------- HERO ---------- */
+.hero{border-bottom:var(--stroke);display:flex;flex-direction:column}
+.hero-in{
+  min-height:calc(100vh - 68px - 40px);
+  display:flex;flex-direction:column;justify-content:center;
+  padding:56px 24px 40px;position:relative;
+}
+.eyebrow{
+  display:inline-block;background:var(--yellow);border:var(--stroke);
+  padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:24px;
+  align-self:flex-start;
+}
+h1{font-size:clamp(48px,8vw,104px)}
+.h1-hl{background:var(--magenta);color:var(--white);padding:0 10px;display:inline-block;transform:rotate(-1.2deg)}
+.lede{font-size:clamp(18px,2vw,22px);max-width:40ch;margin:28px 0 34px;font-weight:400}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.hero-cta .btn{text-decoration:none}
+
+.scroll-cue{
+  position:absolute;bottom:14px;left:24px;
+  display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:0.14em;text-transform:uppercase;
+}
+.scroll-cue svg{animation:bob 1.7s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+.scroll-cue:hover{background:var(--yellow);box-shadow:0 3px 0 var(--ink)}
+
+/* ---------- APP SECTION ---------- */
+.app-sec{background:var(--paper);border-bottom:var(--stroke)}
+.app-in{padding:44px 24px 60px;max-width:1080px}
+.app-head{display:flex;align-items:baseline;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+.app-head h2{font-size:clamp(28px,4.4vw,44px)}
+.ticker{
+  border-top:var(--stroke);border-bottom:var(--stroke);
+  background:var(--ink);color:var(--paper);
+  overflow:hidden;white-space:nowrap;padding:9px 0;margin-bottom:56px;
+}
+.ticker-track{display:inline-block;animation:slide 26s linear infinite}
+.ticker-track span{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;padding:0 22px;text-transform:uppercase}
+.ticker-track span::after{content:"◆";margin-left:22px;color:var(--yellow)}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+
+/* ---------- FOCUS MODE ----------
+   Once the camera is on, the panel takes over the viewport. During a
+   round the user is nervous and talking to a lens — everything else on
+   screen is noise. */
+body.focus{overflow:hidden}
+body.focus nav,
+body.focus .hero,
+body.focus .app-head,
+body.focus #how,
+body.focus #report,
+body.focus #stack,
+body.focus .cta,
+body.focus footer{display:none}
+body.focus .app-sec{
+  position:fixed;inset:0;z-index:900;
+  background:var(--paper);overflow-y:auto;border:none;
+  display:flex;align-items:flex-start;justify-content:center;
+}
+body.focus .app-in{padding:18px 16px 28px;width:100%;max-width:1040px}
+body.focus .demo{box-shadow:var(--shadow-2)}
+body.focus .wheel-wrap{max-width:210px;padding-top:4px}
+
+.exit-focus{
+  position:fixed;top:14px;right:14px;z-index:950;display:none;
+  background:var(--white);border:var(--stroke);box-shadow:var(--shadow-1);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer;
+}
+body.focus .exit-focus{display:block}
+.exit-focus:hover{background:var(--yellow)}
+
+/* ---------- TWO-COLUMN DEMO ----------
+   Wheel and topic left, camera and timer right, so a whole round is
+   visible at once with no scrolling mid-session. */
+.demo-cols{display:grid;grid-template-columns:minmax(0,0.85fr) minmax(0,1.15fr);gap:22px;align-items:start}
+.col-left,.col-right{min-width:0}
+.col-left .demo-actions{margin-top:16px}
+.col-left .demo-actions .btn{flex:1;justify-content:center;min-width:0;padding:12px 14px;font-size:13px}
+.col-right .demo-actions{margin-top:14px}
+.col-right .demo-actions .btn{width:100%;justify-content:center}
+
+/* ---------- DEMO PANEL ---------- */
+.demo{border:var(--stroke);background:var(--white);box-shadow:var(--shadow-3)}
+.demo-bar{
+  background:var(--ink);color:var(--paper);padding:10px 16px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.1em;
+}
+.dot{width:11px;height:11px;background:var(--magenta);border:2px solid var(--paper);display:inline-block;margin-right:7px;vertical-align:-1px}
+.demo-body{padding:30px 26px 26px}
+.demo-label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:12px}
+/* ---------- WHEEL ---------- */
+.wheel-wrap{position:relative;width:100%;max-width:240px;margin:0 auto;padding-top:12px}
+#wheel{width:100%;display:block;transform:rotate(0deg)}
+#wheel.spin{transition:transform 4.4s cubic-bezier(.12,.76,.16,1)}
+.pointer{
+  position:absolute;top:2px;left:50%;transform:translateX(-50%);
+  width:0;height:0;z-index:3;
+  border-left:15px solid transparent;border-right:15px solid transparent;
+  border-top:28px solid var(--ink);
+}
+.pointer::after{
+  content:"";position:absolute;top:-30px;left:-9px;
+  border-left:9px solid transparent;border-right:9px solid transparent;
+  border-top:19px solid var(--magenta);
+}
+.seg-label{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;fill:#000}
+
+.topic-box{
+  border:var(--stroke);background:var(--paper);padding:18px 16px;min-height:112px;
+  display:flex;align-items:center;box-shadow:var(--shadow-1);
+}
+#topicText{font-family:'Archivo Black',sans-serif;font-size:25px;line-height:1.14;text-transform:uppercase;letter-spacing:-0.015em}
+#topicText.idle{font-family:'Archivo',sans-serif;font-size:17px;font-weight:400;text-transform:none;opacity:.55;letter-spacing:0}
+
+/* ---------- CAMERA ---------- */
+.cam-box{
+  position:relative;border:var(--stroke);background:var(--ink);
+  aspect-ratio:16/9;overflow:hidden;box-shadow:var(--shadow-1);
+}
+#camVideo{width:100%;height:100%;object-fit:cover;display:none;transform:scaleX(-1)}
+.cam-box.on #camVideo{display:block}
+.cam-off{
+  position:absolute;inset:0;background:var(--paper);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;text-align:center;padding:18px;
+}
+.cam-box.on .cam-off{display:none}
+.cam-off strong{font-family:'Archivo Black',sans-serif;font-size:16px;text-transform:uppercase}
+.cam-off span{font-size:13.5px;max-width:34ch;opacity:.7;line-height:1.4}
+.cam-off .btn{padding:10px 18px;font-size:13px;min-height:40px;margin-top:4px}
+#diagOut{
+  font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5;
+  text-align:left;background:var(--ink);color:var(--teal);
+  border:var(--stroke);padding:10px;margin-top:8px;max-width:100%;
+  white-space:pre-wrap;word-break:break-word;max-height:150px;overflow:auto;
+}
+.rec-badge{
+  position:absolute;top:10px;left:10px;display:none;align-items:center;gap:7px;
+  background:var(--magenta);color:var(--white);border:3px solid var(--ink);
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+  letter-spacing:0.12em;padding:4px 10px;z-index:2;
+}
+.rec-badge::before{content:"";width:9px;height:9px;background:var(--white);border-radius:50%;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.cam-box.rec .rec-badge{display:flex}
+.cam-box.rec{border-color:var(--magenta);box-shadow:4px 4px 0 var(--magenta)}
+
+/* ---------- PLAYBACK ---------- */
+.play-box{border:var(--stroke);background:var(--ink);aspect-ratio:16/9;overflow:hidden;box-shadow:var(--shadow-1)}
+#playback{width:100%;height:100%;display:block;object-fit:cover}
+.play-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+#playSize{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;opacity:.7}
+.play-meta .btn{padding:10px 18px;font-size:13px;min-height:40px;text-decoration:none}
+
+.review-row{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+.review-row .btn{flex:1;justify-content:center;min-width:150px}
+#uploadMsg{
+  margin-top:12px;border:var(--stroke);padding:10px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;
+  text-transform:uppercase;background:var(--yellow);
+}
+#uploadMsg.ok{background:var(--teal)}
+#uploadMsg.err{background:var(--magenta);color:var(--white)}
+
+.timer-row{display:flex;align-items:stretch;gap:16px;margin-top:22px}
+.timer-box{
+  flex:1;border:var(--stroke);background:var(--ink);color:var(--teal);
+  display:flex;align-items:center;justify-content:center;padding:14px 0;
+}
+#timerNum{font-family:'JetBrains Mono',monospace;font-size:62px;font-weight:700;letter-spacing:-0.03em;line-height:1}
+.timer-box.warn{background:var(--yellow)}
+.timer-box.warn #timerNum{color:var(--ink)}
+.timer-box.crit{background:var(--magenta)}
+.timer-box.crit #timerNum{color:var(--white)}
+.timer-box.live{background:var(--teal)}
+.timer-box.live #timerNum{color:var(--ink);font-size:34px}
+.state-box{
+  width:150px;border:var(--stroke);background:var(--paper);
+  padding:12px;display:flex;flex-direction:column;justify-content:center;gap:6px;
+}
+.state-k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;opacity:.6}
+.state-v{font-family:'Archivo Black',sans-serif;font-size:15px;text-transform:uppercase;line-height:1.1}
+.bar{height:14px;border:var(--stroke);background:var(--white);margin-top:16px}
+.bar i{display:block;height:100%;background:var(--teal);width:0%;transition:width .95s linear}
+.demo-actions{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+
+/* ---------- SECTION FRAME ---------- */
+section{border-bottom:var(--stroke)}
+.sec-head{display:flex;align-items:baseline;gap:18px;padding:60px 0 12px;flex-wrap:wrap}
+.sec-num{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--ink);color:var(--paper);padding:5px 10px;letter-spacing:0.1em}
+h2{font-size:clamp(34px,5vw,60px)}
+.sec-sub{font-size:18px;max-width:56ch;margin-bottom:48px;opacity:.85}
+
+/* ---------- STEPS ---------- */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding-bottom:70px}
+.step{border:var(--stroke);border-right:none;background:var(--white);padding:26px 22px 30px;position:relative}
+.step:last-child{border-right:var(--stroke)}
+.step:nth-child(1){background:var(--teal)}
+.step:nth-child(2){background:var(--white)}
+.step:nth-child(3){background:var(--yellow)}
+.step:nth-child(4){background:var(--magenta);color:var(--white)}
+.step-n{
+  font-family:'Archivo Black',sans-serif;font-size:44px;line-height:1;
+  border-bottom:var(--stroke);padding-bottom:12px;margin-bottom:16px;display:block;
+}
+.step:nth-child(4) .step-n{border-color:var(--white)}
+.step h3{font-size:19px;margin-bottom:10px}
+.step p{font-size:15px;line-height:1.5}
+.step-tag{
+  position:absolute;top:-1px;right:-1px;background:var(--ink);color:var(--paper);
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+  letter-spacing:0.1em;padding:4px 8px;
+}
+
+/* ---------- REPORT ---------- */
+.report-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;padding-bottom:72px;align-items:start}
+.card{border:var(--stroke);background:var(--white);box-shadow:var(--shadow-2)}
+.card-head{background:var(--ink);color:var(--paper);padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.1em;display:flex;justify-content:space-between}
+.card-body{padding:22px 20px}
+.metric{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--ink);padding:13px 0}
+.metric:last-of-type{border-bottom:none}
+.metric-k{font-size:15px;font-weight:600}
+.metric-v{font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:700}
+.pill{border:var(--stroke);padding:2px 9px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-left:9px}
+.pill.good{background:var(--teal)}
+.pill.warn{background:var(--yellow)}
+.pill.bad{background:var(--magenta);color:var(--white)}
+.coach{border:var(--stroke);background:var(--paper);padding:18px;margin-top:20px;box-shadow:var(--shadow-1)}
+.coach-t{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.coach-t::before{content:"";width:12px;height:12px;background:var(--magenta);border:2px solid var(--ink);display:block}
+.coach p{font-size:15.5px;line-height:1.55}
+.coach p+p{margin-top:11px}
+.coach.muted{opacity:.62}
+.coach.muted .coach-t::before{background:var(--teal)}
+.coach:first-child{margin-top:0}
+
+/* ---------- STACK ---------- */
+.stack{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding-bottom:72px}
+.chip{border:var(--stroke);background:var(--white);padding:20px;box-shadow:var(--shadow-1)}
+.chip h3{font-size:16px;margin-bottom:8px}
+.chip p{font-size:14.5px;opacity:.85}
+.chip .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;background:var(--yellow);border:2px solid var(--ink);padding:2px 7px;display:inline-block;margin-bottom:12px}
+
+/* ---------- CTA ---------- */
+.cta{background:var(--ink);color:var(--paper);padding:78px 0;text-align:center}
+.cta h2{font-size:clamp(38px,6.5vw,78px);margin-bottom:20px}
+.cta h2 em{font-style:normal;background:var(--yellow);color:var(--ink);padding:0 12px;display:inline-block;transform:rotate(1deg)}
+.cta p{max-width:44ch;margin:0 auto 32px;opacity:.85}
+footer{padding:26px 0;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;text-transform:uppercase}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+@media(max-width:900px){
+  .report-grid{grid-template-columns:1fr;gap:40px}
+  .steps{grid-template-columns:1fr 1fr}
+  .step{border-right:var(--stroke)}
+  .step:nth-child(1),.step:nth-child(2){border-bottom:none}
+  .stack{grid-template-columns:1fr}
+  .nav-links a:not(.btn){display:none}
+}
+@media(max-width:820px){
+  .demo-cols{grid-template-columns:1fr;gap:18px}
+  .wheel-wrap{max-width:200px}
+  body.focus .wheel-wrap{max-width:160px}
+}
+@media(max-width:560px){
+  body{font-size:17px}
+  .steps{grid-template-columns:1fr}
+  .step{border-bottom:none}
+  .step:last-child{border-bottom:var(--stroke)}
+  .state-box{width:120px}
+  #timerNum{font-size:48px}
+  .hero-in{min-height:calc(100svh - 68px - 40px);padding:40px 20px 44px}
+  body.focus .wheel-wrap{max-width:150px}
+  body.focus .app-in{padding:14px 12px 24px}
+  .review-row .btn{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<button class="exit-focus" onclick="exitFocus()">Exit focus ✕</button>
+
+<nav>
+  <div class="wrap nav-in">
+    <div class="logo"><span>90</span>SECONDS</div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#report">The report</a>
+      <a href="#stack">Under the hood</a>
+      <button class="btn btn-primary" onclick="document.getElementById('go').focus()">Try it now</button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <span class="eyebrow">Prototype / v0.1</span>
+    <h1>You get a topic.<br>You get <span class="h1-hl">90 seconds.</span><br>Camera rolls.</h1>
+    <p class="lede">Thirty seconds to think. Ninety to talk. No script, no second take — then you get told exactly what to fix.</p>
+    <div class="hero-cta">
+      <a class="btn btn-loud" href="#app">Start a round</a>
+      <a class="btn" href="#how">See how it works</a>
+    </div>
+    <a class="scroll-cue" href="#app" aria-label="Scroll to the app">
+      <span>Scroll to begin</span>
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+        <path d="M12 4v15M5 13l7 7 7-7" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="square"/>
+      </svg>
+    </a>
+  </div>
+
+  <div class="ticker">
+    <div class="ticker-track" id="tick"></div>
+  </div>
+</header>
+
+<section id="app" class="app-sec">
+  <div class="wrap app-in">
+    <div class="app-head">
+      <span class="sec-num">LIVE</span>
+      <h2>Spin. Think. Speak.</h2>
+    </div>
+
+    <div class="demo">
+      <div class="demo-bar">
+        <span><span class="dot"></span>SESSION_01</span>
+        <span id="statusText">READY</span>
+      </div>
+      <div class="demo-body">
+        <div class="demo-cols">
+
+          <div class="col-left">
+            <div class="demo-label">Topic wheel</div>
+            <div class="wheel-wrap">
+              <div class="pointer"></div>
+              <svg id="wheel" viewBox="0 0 300 300" aria-hidden="true">
+                <g id="segs"></g>
+                <circle cx="150" cy="150" r="30" fill="#F5F5DC" stroke="#000" stroke-width="5"/>
+                <text x="150" y="150" text-anchor="middle" dominant-baseline="central"
+                      font-family="'Archivo Black',sans-serif" font-size="17" fill="#000">SPIN</text>
+              </svg>
+            </div>
+
+            <div class="demo-label" style="margin-top:16px">Your topic</div>
+            <div class="topic-box">
+              <div id="topicText" class="idle">Hit "Give me a topic" and the wheel decides. You don't get to skip.</div>
+            </div>
+
+            <div class="demo-actions">
+              <button class="btn btn-loud" id="go" onclick="startRound()">Give me a topic</button>
+              <button class="btn btn-yellow" id="againBtn" onclick="startRound()">Shuffle</button>
+            </div>
+          </div>
+
+          <div class="col-right">
+            <div class="demo-label">Camera</div>
+            <div class="cam-box" id="camBox">
+              <video id="camVideo" playsinline autoplay muted></video>
+              <div class="cam-off" id="camOff">
+                <strong>Camera is off</strong>
+                <span>Grant access and the preview appears here. It turns on by itself when the thinking time runs out.</span>
+                <button class="btn btn-primary" id="camBtn" onclick="enableCamera()">Allow camera</button>
+                <button class="btn" id="diagBtn" onclick="runDiag()" style="padding:8px 14px;font-size:12px;min-height:34px">Run camera check</button>
+                <pre id="diagOut" hidden></pre>
+              </div>
+              <div class="rec-badge" id="recBadge">REC</div>
+            </div>
+
+            <div class="timer-row">
+              <div class="timer-box" id="timerBox"><span id="timerNum">1:30</span></div>
+              <div class="state-box">
+                <span class="state-k">Phase</span>
+                <span class="state-v" id="phaseText">Ready</span>
+                <span class="state-k" style="margin-top:4px">Camera</span>
+                <span class="state-v" id="camText">Off</span>
+              </div>
+            </div>
+            <div class="bar"><i id="barFill"></i></div>
+
+            <div class="demo-actions">
+              <button class="btn btn-primary" id="skipBtn" onclick="skipThink()" hidden>Start recording now</button>
+              <button class="btn" id="stopBtn" onclick="stopEarly()" disabled>Stop &amp; keep</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="playbackWrap" hidden>
+          <div class="demo-label" style="margin-top:22px">Review your take</div>
+          <div class="play-box">
+            <video id="playback" controls playsinline></video>
+          </div>
+          <div class="play-meta">
+            <span id="playSize">—</span>
+            <a class="btn btn-primary" id="dlBtn" download="take.webm">↓ Download video</a>
+          </div>
+          <div class="review-row">
+            <button class="btn btn-loud" id="sendBtn" onclick="submitTake()">Send for feedback</button>
+            <button class="btn btn-yellow" id="redoBtn" onclick="startRound()">Discard &amp; retry</button>
+          </div>
+          <div id="uploadMsg" hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2>Four steps.<br>Two minutes total.</h2>
+    </div>
+    <p class="sec-sub">The order matters — the thinking time is deliberately short so you learn to structure a thought while you're already talking, not before.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-tag">0:00</span>
+        <span class="step-n">1</span>
+        <h3>Take the topic</h3>
+        <p>One line, picked at random. Films, hot takes, lifestyle, explain-it-simply. You don't get to choose, and you don't get to skip.</p>
+      </div>
+      <div class="step">
+        <span class="step-tag">0:00 → 0:30</span>
+        <span class="step-n">2</span>
+        <h3>Think fast</h3>
+        <p>Thirty seconds to read it properly and find an angle. Enough to pick a direction, not enough to write a script.</p>
+      </div>
+      <div class="step">
+        <span class="step-tag">0:30 → 2:00</span>
+        <span class="step-n">3</span>
+        <h3>Camera opens</h3>
+        <p>It opens on its own. Ninety seconds, one continuous take, no pause button. Talk until it stops.</p>
+      </div>
+      <div class="step">
+        <span class="step-tag">AFTER 2:00</span>
+        <span class="step-n">4</span>
+        <h3>Read the report</h3>
+        <p>Speech becomes text, text becomes numbers, numbers become one specific thing to fix in your next round.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="report">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2>What comes back</h2>
+    </div>
+    <p class="sec-sub">One card, one round. Counting happens in code so the numbers are exact — the model reads them and tells you what they mean.</p>
+    <div class="report-grid">
+      <div class="card">
+        <div class="card-head"><span id="reportHead">REPORT / NO SESSION YET</span><span id="reportDur">&mdash;</span></div>
+        <div class="card-body">
+          <div class="metric"><span class="metric-k">Filler words</span><span id="m-filler"><span class="metric-v">&mdash;</span></span></div>
+          <div class="metric"><span class="metric-k">Speaking pace</span><span id="m-wpm"><span class="metric-v">&mdash;</span></span></div>
+          <div class="metric"><span class="metric-k">Longest pause</span><span id="m-pause"><span class="metric-v">&mdash;</span></span></div>
+          <div class="metric"><span class="metric-k">Time to first word</span><span id="m-first"><span class="metric-v">&mdash;</span></span></div>
+          <div class="metric"><span class="metric-k">Repeated restarts</span><span id="m-restart"><span class="metric-v">&mdash;</span></span></div>
+          <div class="metric"><span class="metric-k">Used the full time</span><span id="m-used"><span class="metric-v">&mdash;</span></span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="coach" id="aiCoach" hidden></div>
+        <div class="coach" id="aiFix" style="background:var(--yellow)" hidden></div>
+        <div class="coach" id="coachNote">
+          <div class="coach-t">The numbers</div>
+          <p>Record a round and send it for feedback. Every number here is computed from your actual speech &mdash; nothing is estimated.</p>
+        </div>
+        <div class="coach" hidden>
+          <div class="coach-t">Transcript</div>
+          <p id="transcriptBox" class="mono" style="font-size:13px;line-height:1.65"></p>
+        </div>
+        <div class="coach">
+          <div class="coach-t">What you won't find here</div>
+          <p>No scores, no streaks, no dashboard. Every round is judged on its own &mdash; the point is the ninety seconds, not the graph afterwards.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2>Under the hood</h2>
+    </div>
+    <p class="sec-sub">Built to stay fast when a hundred people press record at the same time.</p>
+    <div class="stack">
+      <div class="chip">
+        <span class="k">Topics</span>
+        <h3>Written ahead of time</h3>
+        <p>Thousands of prompts generated offline and stored. Serving one is a single indexed lookup, so the clock never waits on a model.</p>
+      </div>
+      <div class="chip">
+        <span class="k">Transcript</span>
+        <h3>Whisper, self-hosted</h3>
+        <p>Runs on your own machine with word-level timestamps. No per-minute billing, no rate limit in the middle of a load test.</p>
+      </div>
+      <div class="chip">
+        <span class="k">Feedback</span>
+        <h3>Queued, never blocking</h3>
+        <p>Recording goes to a job queue and the page gets an ID straight back. The model can take four seconds; the API answers in forty milliseconds.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <h2>Stop rehearsing.<br><em>Start recording.</em></h2>
+    <p>The only way to get comfortable on camera is to be uncomfortable on camera about forty times.</p>
+    <button class="btn btn-primary" onclick="window.scrollTo({top:0,behavior:'smooth'});setTimeout(startRound,450)">Give me a topic</button>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span>90SECONDS — frontend prototype</span>
+    <span>Neo-brutalist / no backend yet</span>
+  </footer>
+</div>
+
+<script>
+/* Fallback used only if the server is unreachable, so the page still
+   works when opened as a static file. */
+const FALLBACK_TOPICS=[
+  "The last film that genuinely surprised you",
+  "Sell me on a hobby you're bad at",
+  "Explain the internet to someone from 1850",
+  "A rule you follow that nobody asked you to",
+  "The most overrated food, and be specific",
+  "Teach me something in thirty seconds",
+  "Defend a movie everyone else hated",
+  "The worst advice you were ever given",
+  "Convince me to read your favourite book",
+  "One thing you've changed your mind about"
+];
+let TOPICS=[...FALLBACK_TOPICS];
+const TICK=["Speak first","Edit never","Ninety seconds","No script","Camera rolls","Count the fillers","Watch the pace","Try again tomorrow"];
+
+const tick=document.getElementById('tick');
+tick.innerHTML=(TICK.concat(TICK)).map(t=>`<span>${t}</span>`).join('');
+
+const FILLS=['#00C2CB','#FFFFFF','#FF00FF','#FFD700'];
+const R=138, CX=150, CY=150;
+const NS='http://www.w3.org/2000/svg';
+const segs=document.getElementById('segs');
+let N=TOPICS.length, SEG=360/N;
+
+function pt(deg,r){const a=(deg-90)*Math.PI/180;return[CX+r*Math.cos(a),CY+r*Math.sin(a)]}
+
+function drawWheel(){
+  N=TOPICS.length; SEG=360/N;
+  segs.textContent='';
+  for(let i=0;i<N;i++){
+    const a0=i*SEG,a1=(i+1)*SEG;
+    const[x0,y0]=pt(a0,R),[x1,y1]=pt(a1,R);
+    const p=document.createElementNS(NS,'path');
+    p.setAttribute('d',`M${CX} ${CY} L${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1} Z`);
+    p.setAttribute('fill',FILLS[i%4]);
+    p.setAttribute('stroke','#000');
+    p.setAttribute('stroke-width','4');
+    segs.appendChild(p);
+
+    const[lx,ly]=pt(a0+SEG/2,R-30);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',lx);t.setAttribute('y',ly);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('dominant-baseline','central');
+    t.setAttribute('class','seg-label');
+    t.setAttribute('transform',`rotate(${a0+SEG/2} ${lx} ${ly})`);
+    t.textContent=String(i+1).padStart(2,'0');
+    segs.appendChild(t);
+  }
+}
+drawWheel();
+
+/* Pull the real topic bank from the server. Falls back silently to the
+   hardcoded list if there is no server, so the page never breaks. */
+async function loadTopics(){
+  try{
+    const r=await fetch('/api/topics?count=10');
+    if(!r.ok)return;
+    const data=await r.json();
+    if(Array.isArray(data.topics)&&data.topics.length){
+      TOPICS=data.topics.map(t=>t.text);
+      last=-1;
+      drawWheel();
+    }
+  }catch(e){/* offline or static — fallback list stays */}
+}
+
+let timerId=null,phase='idle',last=-1,turns=0,spinning=false,stream=null;
+const wheel=document.getElementById('wheel'),
+      topicText=document.getElementById('topicText'),
+      timerNum=document.getElementById('timerNum'),
+      timerBox=document.getElementById('timerBox'),
+      phaseText=document.getElementById('phaseText'),
+      camText=document.getElementById('camText'),
+      statusText=document.getElementById('statusText'),
+      barFill=document.getElementById('barFill'),
+      stopBtn=document.getElementById('stopBtn'),
+      goBtn=document.getElementById('go'),
+      againBtn=document.getElementById('againBtn'),
+      camBox=document.getElementById('camBox'),
+      camVideo=document.getElementById('camVideo'),
+      camOff=document.getElementById('camOff'),
+      camBtn=document.getElementById('camBtn');
+
+const THINK=30, RECORD=90;
+let recorder=null,chunks=[],lastUrl=null,currentTopic='',recordedSeconds=0,recStart=0;
+const playbackWrap=document.getElementById('playbackWrap'),
+      playback=document.getElementById('playback'),
+      playSize=document.getElementById('playSize'),
+      dlBtn=document.getElementById('dlBtn');
+
+function fmt(s){return s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):String(s)}
+
+/* Chrome/Firefox prefer webm; Safari only does mp4. Pick the first supported. */
+function pickMime(){
+  const c=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+  for(const m of c){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m))return m}
+  return '';
+}
+
+function startRecording(){
+  if(!stream||!window.MediaRecorder)return;
+  chunks=[];
+  const mime=pickMime();
+  try{
+    recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+  }catch(e){recorder=null;return}
+
+  /* Capture the type now. stopRecording() nulls `recorder` synchronously,
+     but onstop fires a tick later — reading recorder.mimeType in there
+     would throw and silently kill the playback. */
+  const recType=recorder.mimeType||mime||'video/webm';
+  const rec=recorder;
+
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec.onstop=()=>{
+    if(!chunks.length){
+      console.warn('No data captured');
+      return;
+    }
+    const blob=new Blob(chunks,{type:recType});
+    if(lastUrl)URL.revokeObjectURL(lastUrl);
+    lastUrl=URL.createObjectURL(blob);
+    playback.src=lastUrl;
+    const ext=recType.includes('mp4')?'mp4':'webm';
+    dlBtn.href=lastUrl;
+    dlBtn.download=`take-${Date.now()}.${ext}`;
+    const partial=recordedSeconds&&recordedSeconds<RECORD-1;
+    playSize.textContent=
+      `${(blob.size/1048576).toFixed(1)} MB · ${fmt(recordedSeconds||0)}` +
+      (partial?' · STOPPED EARLY':'');
+    playbackWrap.hidden=false;
+    requestAnimationFrame(()=>{
+      playbackWrap.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+    window.lastTake=blob;
+  };
+  rec.start(1000);
+  recStart=Date.now();
+}
+
+function stopRecording(){
+  if(recorder&&recorder.state!=='inactive'){
+    recordedSeconds=Math.round((Date.now()-recStart)/1000);
+    const r=recorder;
+    recorder=null;
+    try{
+      /* requestData fires ondataavailable asynchronously, so give it a
+         tick to land before stop() finalises the blob. */
+      if(r.state==='recording'&&r.requestData){
+        r.requestData();
+        setTimeout(()=>{try{r.stop()}catch(e){}},60);
+      }else{
+        r.stop();
+      }
+    }catch(e){try{r.stop()}catch(_){}}
+    return;
+  }
+  recorder=null;
+}
+
+/* Review gate: nothing reaches the backend until the user approves the
+   take. Discarded takes never cost a Gemini call. */
+/* Focus mode: the app fills the viewport once the camera is live, so
+   nothing competes with the lens during a round. */
+function enterFocus(){
+  document.body.classList.add('focus');
+  window.scrollTo(0,0);
+}
+function exitFocus(){
+  if(phase==='record'&&!confirm('Recording in progress. Leave and discard this take?'))return;
+  if(phase==='record'){clearInterval(timerId);stopRecording();resetRound()}
+  document.body.classList.remove('focus');
+  document.getElementById('app').scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.body.classList.contains('focus')&&phase!=='record')exitFocus();
+});
+
+const skipBtn=document.getElementById('skipBtn');
+
+/* Shared by the countdown hitting zero and the skip button. */
+function beginRecording(){
+  phase='record';
+  camBox.classList.add('rec');
+  startRecording();
+  phaseText.textContent='Recording';statusText.textContent='● REC';
+  camText.textContent=stream?'Live':'No feed';
+  timerNum.textContent=fmt(RECORD);setBox('');
+  if(skipBtn)skipBtn.hidden=true;
+}
+
+/* The 30s is there to help, not to trap. If you're ready, go. */
+function skipThink(){
+  if(phase!=='think')return;
+  clearInterval(timerId);
+  beginRecording();
+  let t=RECORD;
+  timerId=setInterval(()=>{t--;tickRecord(t);if(t<=0)clearInterval(timerId)},1000);
+}
+
+function tickRecord(t){
+  timerNum.textContent=fmt(t);
+  barFill.style.width=((RECORD-t)/RECORD*100)+'%';
+  setBox(t<=10?'crit':t<=25?'warn':'');
+  if(t<=0){
+    phase='done';
+    camBox.classList.remove('rec');
+    stopRecording();
+    setBox('live');timerNum.textContent='DONE';
+    phaseText.textContent='Complete';statusText.textContent='DONE';
+    camText.textContent=stream?'Ready':'Off';
+    barFill.style.width='100%';
+    stopBtn.disabled=true;
+  }
+}
+
+async function submitTake(){
+  const msg=document.getElementById('uploadMsg');
+  const sendBtn=document.getElementById('sendBtn');
+  const show=(cls,text)=>{msg.hidden=false;msg.className=cls;msg.textContent=text};
+
+  if(!window.lastTake){show('err','No recording to send');return}
+
+  sendBtn.disabled=true;
+  show('','Uploading… 0%');
+
+  const fd=new FormData();
+  const ext=(window.lastTake.type||'').includes('mp4')?'mp4':'webm';
+  fd.append('recording',window.lastTake,`take.${ext}`);
+  fd.append('topic',currentTopic||'');
+  fd.append('durationSec',String(recordedSeconds||0));
+
+  try{
+    const json=await new Promise((resolve,reject)=>{
+      const xhr=new XMLHttpRequest();
+      xhr.open('POST','/api/sessions');
+      xhr.upload.onprogress=e=>{
+        if(e.lengthComputable)show('',`Uploading… ${Math.round(e.loaded/e.total*100)}%`);
+      };
+      xhr.onload=()=>{
+        try{
+          const d=JSON.parse(xhr.responseText);
+          xhr.status>=200&&xhr.status<300?resolve(d):reject(new Error(d.error||`HTTP ${xhr.status}`));
+        }catch(_){reject(new Error(`HTTP ${xhr.status}`))}
+      };
+      xhr.onerror=()=>reject(new Error('Network error — is the server running?'));
+      xhr.ontimeout=()=>reject(new Error('Upload timed out'));
+      xhr.timeout=120000;
+      xhr.send(fd);
+    });
+    show('ok',`Sent · analysing…`);
+    sendBtn.textContent='Sent';
+    pollSession(json.sessionId,show);
+  }catch(e){
+    show('err',e.message||'Upload failed');
+    sendBtn.disabled=false;
+  }
+}
+
+/* Transcription takes a few seconds on CPU, so the upload response comes
+   back immediately and we poll for the result. */
+async function pollSession(id,show){
+  const started=Date.now();
+  const tick=async()=>{
+    if(Date.now()-started>180000){show('err','Analysis timed out');return}
+    try{
+      const r=await fetch(`/api/sessions/${id}`);
+      const s=await r.json();
+      if(s.status==='analysed'){
+        renderReport(s);
+        if(s.coaching){show('ok','Coaching ready');return}
+        if(s.coachingError){show('ok','Analysis ready (no AI note)');return}
+        if(Date.now()-started>60000){show('ok','Analysis ready');return}
+        show('','Writing coaching…');
+        setTimeout(tick,1800);
+        return;
+      }
+      if(s.status==='failed'){show('err',`Analysis failed: ${s.error||'unknown'}`);return}
+      show('',s.status==='transcribing'?'Transcribing…':'Queued…');
+      setTimeout(tick,1500);
+    }catch(_){setTimeout(tick,2500)}
+  };
+  tick();
+}
+
+const GRADE_LABEL={good:'Good',warn:'Watch',bad:'High'};
+
+function renderReport(s){
+  const m=s.metrics,g=s.grades||{};
+  if(!m)return;
+  const set=(id,val,grade,label)=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML=`<span class="metric-v">${val}</span>`+
+      (grade?`<span class="pill ${grade}">${label||GRADE_LABEL[grade]}</span>`:'');
+  };
+
+  set('m-filler',m.fillerCount,g.fillerCount);
+  set('m-wpm',`${m.wpm} wpm`,g.wpm,g.wpm==='good'?'Good':m.wpm>160?'Fast':'Slow');
+  set('m-pause',`${m.longestPauseSec}s`,g.longestPause,g.longestPause==='good'?'Fine':'Long');
+  set('m-first',`${m.timeToFirstWordSec}s`,g.timeToFirst,g.timeToFirst==='good'?'Good':'Slow');
+  set('m-restart',m.restarts,g.restarts,g.restarts==='good'?'Good':'Watch');
+  set('m-used',`${m.usedSec}s / ${m.allowedSec}s`,g.usedTime,g.usedTime==='good'?'Good':'Short');
+
+  const head=document.getElementById('reportHead');
+  if(head)head.textContent=`REPORT / ${String(s.sessionId).slice(0,8)}`;
+  const dur=document.getElementById('reportDur');
+  if(dur)dur.textContent=fmt(m.usedSec);
+
+  const top=Object.entries(m.fillers||{}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const note=document.getElementById('coachNote');
+  if(note){
+    const body = top.length
+      ? `<p>You used ${m.fillerCount} filler${m.fillerCount===1?'':'s'} across ${m.wordCount} words — most often ${top.map(([w,c])=>`<strong>"${w}" ×${c}</strong>`).join(', ')}.</p>
+         <p>Pace was ${m.wpm} words per minute over ${m.speakingSec}s of speech, with ${m.pauseCount} pause${m.pauseCount===1?'':'s'} longer than 0.6s.</p>`
+      : `<p>No filler words detected across ${m.wordCount} words. Pace was ${m.wpm} words per minute.</p>`;
+    note.innerHTML=`<div class="coach-t">The numbers</div>${body}`;
+  }
+
+  const tr=document.getElementById('transcriptBox');
+  if(tr&&s.transcript){tr.textContent=s.transcript;tr.parentElement.hidden=false}
+
+  /* AI coaching arrives a moment after the metrics. */
+  const c=s.coaching;
+  const aiBox=document.getElementById('aiCoach');
+  if(aiBox&&c){
+    aiBox.hidden=false;
+    aiBox.innerHTML=
+      `<div class="coach-t">Coach note</div>`+
+      (c.onTopicNote?`<p><strong>${c.onTopic?'On topic.':'Drifted.'}</strong> ${esc(c.onTopicNote)}</p>`:'')+
+      (c.observation?`<p>${esc(c.observation)}</p>`:'')+
+      (c.cause?`<p>${esc(c.cause)}</p>`:'')+
+      (c.strength?`<p><strong>What worked:</strong> ${esc(c.strength)}</p>`:'');
+    const fix=document.getElementById('aiFix');
+    if(fix&&c.actionItem){
+      fix.hidden=false;
+      fix.innerHTML=`<div class="coach-t">Fix this next round</div><p>${esc(c.actionItem)}</p>`;
+    }
+    const stats=document.getElementById('coachNote');
+    if(stats)stats.classList.add('muted');
+  }
+
+  document.getElementById('report').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function esc(t){
+  const d=document.createElement('div');
+  d.textContent=String(t);
+  return d.innerHTML;
+}
+
+async function runDiag(){
+  const out=document.getElementById('diagOut');
+  out.hidden=false;
+  const L=[];
+  const p=m=>{L.push(m);out.textContent=L.join('\n')};
+
+  p('URL      : '+location.protocol+'//'+location.hostname);
+  p('Secure   : '+(window.isSecureContext?'yes':'NO — use localhost'));
+  p('API      : '+(navigator.mediaDevices?'present':'MISSING'));
+  p('Recorder : '+(window.MediaRecorder?'present':'MISSING'));
+
+  if(!navigator.mediaDevices){p('\n>> Serve over localhost, not file://');return}
+
+  try{
+    const devs=await navigator.mediaDevices.enumerateDevices();
+    const cams=devs.filter(d=>d.kind==='videoinput');
+    const mics=devs.filter(d=>d.kind==='audioinput');
+    p('Cameras  : '+cams.length);
+    p('Mics     : '+mics.length);
+    if(!cams.length){p('\n>> No camera visible to the browser.\n>> Check OS privacy settings.');return}
+  }catch(e){p('enumerate failed: '+e.name)}
+
+  p('\nRequesting access...');
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    p('RESULT   : OK ('+s.getTracks().map(t=>t.kind).join(', ')+')');
+    p('\n>> Camera works. Click "Allow camera".');
+    s.getTracks().forEach(t=>t.stop());
+  }catch(e){
+    p('RESULT   : '+e.name);
+    p('DETAIL   : '+(e.message||'—'));
+    const fix={
+      NotAllowedError:'Permission blocked. Click the icon at the left of the address bar, set Camera + Microphone to Allow, then reload. If no prompt ever appeared, check OS privacy settings.',
+      NotReadableError:'Another app is holding the camera. Close Zoom, Teams, OBS, or Camera and reload.',
+      NotFoundError:'No camera found at that spec.',
+      OverconstrainedError:'Resolution unsupported by this camera.',
+      SecurityError:'Blocked by browser policy. Use localhost.',
+      AbortError:'Hardware failed to start. Reconnect the camera.'
+    }[e.name]||'Unrecognised error.';
+    p('\n>> '+fix);
+  }
+}
+
+async function enableCamera(){
+  camBtn.disabled=true;camBtn.textContent='Waiting…';
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:1280},height:{ideal:720}},
+      audio:true
+    });
+    camVideo.srcObject=stream;
+    camBox.classList.add('on');
+    camText.textContent='Ready';
+    enterFocus();
+  }catch(e){
+    camBtn.disabled=false;camBtn.textContent='Allow camera';
+    camOff.querySelector('span').textContent=
+      e.name==='NotAllowedError'
+        ? 'Access was blocked. Re-enable the camera in your browser’s address bar, then try again.'
+        : 'No camera found. The round still runs — you just won’t see a preview.';
+    camText.textContent='Blocked';
+  }
+}
+
+function pick(){let i;do{i=Math.floor(Math.random()*N)}while(i===last&&N>1);last=i;return i}
+function setBox(cls){timerBox.className='timer-box'+(cls?' '+cls:'')}
+function lock(on){spinning=on;goBtn.disabled=on;againBtn.disabled=on}
+
+function startRound(){
+  if(spinning)return;
+  clearInterval(timerId);
+  stopRecording();
+  camBox.classList.remove('rec');
+  playbackWrap.hidden=true;
+  lock(true);
+  topicText.classList.add('idle');
+  topicText.textContent='Wheel is spinning…';
+  stopBtn.disabled=true;
+  if(skipBtn)skipBtn.hidden=true;
+  timerNum.textContent=fmt(RECORD);setBox('');barFill.style.width='0%';
+  phaseText.textContent='Spinning';statusText.textContent='SPINNING';
+  camText.textContent=stream?'Ready':'Off';
+
+  const i=pick();
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  turns+=reduce?1:6;
+  const target=turns*360-(i*SEG+SEG/2);
+  wheel.classList.add('spin');
+  if(reduce)wheel.style.transition='transform .5s ease-out';
+  requestAnimationFrame(()=>{wheel.style.transform=`rotate(${target}deg)`});
+
+  setTimeout(()=>{lock(false);revealTopic(i)},reduce?520:4450);
+}
+
+function revealTopic(i){
+  topicText.classList.remove('idle');
+  topicText.textContent=TOPICS[i];
+  currentTopic=TOPICS[i];
+  const sb=document.getElementById('sendBtn'),um=document.getElementById('uploadMsg');
+  if(sb){sb.disabled=false;sb.textContent='Send for feedback'}
+  if(um){um.hidden=true}
+  stopBtn.disabled=false;
+  if(skipBtn)skipBtn.hidden=false;
+  let t=THINK;phase='think';
+  phaseText.textContent='Reading';statusText.textContent='THINK';
+  camText.textContent=stream?'Ready':'Off';
+  timerNum.textContent=fmt(t);setBox('');
+
+  timerId=setInterval(()=>{
+    t--;
+    if(phase==='think'){
+      timerNum.textContent=fmt(t);
+      setBox(t<=5?'crit':t<=10?'warn':'');
+      if(t<=0){beginRecording();t=RECORD}
+    }else{
+      tickRecord(t);
+      if(t<=0)clearInterval(timerId);
+    }
+  },1000);
+}
+
+loadTopics();
+
+/* Stop early: the take is kept, not discarded. Whatever was recorded up
+   to this point is playable, downloadable and submittable. */
+function stopEarly(){
+  clearInterval(timerId);
+  if(phase==='record'){
+    stopRecording();
+    const done=recordedSeconds||0;
+    camBox.classList.remove('rec');
+    setBox('live');
+    timerNum.textContent='STOPPED';
+    phaseText.textContent='Stopped';
+    statusText.textContent='STOPPED';
+    camText.textContent=stream?'Ready':'Off';
+    barFill.style.width=Math.min(done/RECORD*100,100)+'%';
+    phase='done';
+  }else{
+    /* Stopped during the thinking phase — nothing was captured. */
+    phase='idle';
+    setBox('');
+    timerNum.textContent=fmt(RECORD);
+    phaseText.textContent='Ready';
+    statusText.textContent='READY';
+    barFill.style.width='0%';
+  }
+  stopBtn.disabled=true;
+  if(skipBtn)skipBtn.hidden=true;
+}
+
+function resetRound(){
+  clearInterval(timerId);phase='idle';stopBtn.disabled=true;
+  stopRecording();
+  camBox.classList.remove('rec');
+  timerNum.textContent=fmt(RECORD);setBox('');barFill.style.width='0%';
+  phaseText.textContent='Ready';statusText.textContent='READY';
+  camText.textContent=stream?'Ready':'Off';
+  topicText.classList.add('idle');
+  topicText.textContent='Hit "Give me a topic" and the wheel decides. You don\'t get to skip.';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "ninety-seconds",
+  "version": "0.1.0",
+  "description": "AI speaking coach — random topic, 30s to think, 90s on camera, then honest feedback.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "transcribe": "python server/transcribe.py"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "license": "MIT"
+}

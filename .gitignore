@@ -1,0 +1,56 @@
+# ---- SECRETS: never commit these ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# ---- User recordings & generated media ----
+uploads/
+recordings/
+tmp/
+*.webm
+*.mp4
+*.wav
+*.mp3
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+
+# ---- Python (Whisper worker) ----
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+*.egg-info/
+
+# ---- Database ----
+*.sqlite
+*.sqlite3
+*.db
+data/
+
+# ---- Build output ----
+dist/
+build/
+.cache/
+
+# ---- Editor / OS ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---- Logs & test artifacts ----
+logs/
+*.log
+loadtest-results/
