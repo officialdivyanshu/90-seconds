@@ -310,6 +310,9 @@ app.post('/api/sessions', (req, res) => {
     }
 
     console.log(`Session ${req.sessionId} — ${(req.file.size / 1048576).toFixed(1)}MB`);
+    // Tell Chrome not to reuse this connection. Stale keep-alive sockets from
+    // a previous server instance cause uploads to stall at ~6% on Windows.
+    res.setHeader('Connection', 'close');
     res.status(201).json(session);
 
     // Fire and forget. The client polls GET /api/sessions/:id for the result.
@@ -383,6 +386,7 @@ app.post('/api/sessions/raw', (req, res) => {
     }
 
     console.log(`Session ${sessionId} (raw) — ${(received / 1048576).toFixed(1)}MB`);
+    res.setHeader('Connection', 'close');
     res.status(201).json(session);
 
     setImmediate(() => processSession(sessionId, filePath, metaPath));
@@ -435,8 +439,8 @@ const server = app.listen(PORT, () => {
 // Chrome holds the TCP connection open for reuse. Node's default
 // keepAliveTimeout (5 s) can race the upload on Windows loopback paths
 // where the first send stalls. headersTimeout must exceed keepAliveTimeout.
-server.keepAliveTimeout = 65000;
-server.headersTimeout   = 66000;
+server.keepAliveTimeout = 5000;   // short in dev — stale sockets from restarts confuse Chrome
+server.headersTimeout   = 6000;
 server.requestTimeout   = 0;     // no per-request deadline
 
 server.on('clientError', (err, socket) => {
@@ -445,7 +449,12 @@ server.on('clientError', (err, socket) => {
 });
 
 server.on('connection', (socket) => {
+  const addr = `${socket.remoteAddress}:${socket.remotePort}`;
+  console.log(`TCP connect: ${addr}`);
   socket.on('error', (err) => {
-    console.error(`Socket error: ${err.code || err.message}`);
+    console.error(`Socket error [${addr}]: ${err.code || err.message}`);
+  });
+  socket.on('close', (hadError) => {
+    if (hadError) console.warn(`Socket closed with error [${addr}]`);
   });
 });
