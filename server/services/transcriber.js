@@ -5,25 +5,53 @@
  * disk as a documented fallback, no longer on the active path) with Groq's
  * hosted Whisper endpoint. Returns the exact same shape the Python worker
  * used to, so metrics/grading/Gemini downstream need no changes.
+ *
+ * Groq caps uploads at ~25MB and only needs the audio track. A 90-second
+ * 720p webm can be 10-15MB on its own, so the video is transcoded down to
+ * mono 16kHz/64kbps audio first — Whisper downsamples to 16kHz internally
+ * anyway, so anything higher is wasted bytes.
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('ffmpeg-static');
+
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 const ENDPOINT = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const MODEL = 'whisper-large-v3-turbo';
 const MAX_RETRIES = 3;
+const MAX_AUDIO_BYTES = 24 * 1024 * 1024; // Groq's limit is ~25MB; leave headroom
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const mb = (bytes) => (bytes / 1048576).toFixed(1);
 
-function mimeFor(filePath) {
-  return path.extname(filePath).toLowerCase() === '.mp4' ? 'video/mp4' : 'video/webm';
+function transcodeToAudio(filePath) {
+  const outPath = path.join(os.tmpdir(), `${crypto.randomUUID()}.mp3`);
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .noVideo()
+      .audioChannels(1)
+      .audioFrequency(16000)
+      .audioBitrate('64k')
+      .audioCodec('libmp3lame')
+      .format('mp3')
+      .on('error', (err) => {
+        fs.unlink(outPath, () => {});
+        reject(err);
+      })
+      .on('end', () => resolve(outPath))
+      .save(outPath);
+  });
 }
 
-async function callGroq(filePath, apiKey) {
-  const buffer = fs.readFileSync(filePath);
+async function callGroq(audioPath, apiKey) {
+  const buffer = fs.readFileSync(audioPath);
   const form = new FormData();
-  form.append('file', new Blob([buffer], { type: mimeFor(filePath) }), path.basename(filePath));
+  form.append('file', new Blob([buffer], { type: 'audio/mpeg' }), path.basename(audioPath));
   form.append('model', MODEL);
   form.append('response_format', 'verbose_json');
   form.append('timestamp_granularities[]', 'word');
@@ -52,35 +80,54 @@ async function transcribe(filePath) {
     return { ok: false, error: 'GROQ_API_KEY is not set' };
   }
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const data = await callGroq(filePath, apiKey);
+  let audioPath;
+  try {
+    audioPath = await transcodeToAudio(filePath);
+  } catch (e) {
+    return { ok: false, error: `Audio extraction failed: ${e.message}` };
+  }
 
-      const words = (data.words || [])
-        .map((w) => ({
-          w: (w.word || '').trim(),
-          start: Math.round(w.start * 1000) / 1000,
-          end: Math.round(w.end * 1000) / 1000
-        }))
-        .filter((w) => w.w);
+  try {
+    const videoBytes = fs.statSync(filePath).size;
+    const audioBytes = fs.statSync(audioPath).size;
+    console.log(`Audio extracted: ${mb(videoBytes)}MB video → ${mb(audioBytes)}MB audio`);
 
-      return {
-        ok: true,
-        text: (data.text || '').trim(),
-        durationSec: Math.round((data.duration || 0) * 100) / 100,
-        language: data.language,
-        words
-      };
-    } catch (e) {
-      const retryable = e.status === 429 || e.status >= 500;
-      if (!retryable || attempt === MAX_RETRIES) {
-        return { ok: false, error: e.message };
-      }
-      // Exponential backoff with jitter, same pattern as services/gemini.js.
-      const backoff = Math.pow(2, attempt) * 1000 + Math.random() * 500;
-      console.warn(`Groq ${e.status}, retrying in ${Math.round(backoff)}ms`);
-      await sleep(backoff);
+    if (audioBytes > MAX_AUDIO_BYTES) {
+      return { ok: false, error: `Extracted audio is ${mb(audioBytes)}MB, over Groq's 25MB upload limit` };
     }
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const data = await callGroq(audioPath, apiKey);
+
+        const words = (data.words || [])
+          .map((w) => ({
+            w: (w.word || '').trim(),
+            start: Math.round(w.start * 1000) / 1000,
+            end: Math.round(w.end * 1000) / 1000
+          }))
+          .filter((w) => w.w);
+
+        return {
+          ok: true,
+          text: (data.text || '').trim(),
+          durationSec: Math.round((data.duration || 0) * 100) / 100,
+          language: data.language,
+          words
+        };
+      } catch (e) {
+        const retryable = e.status === 429 || e.status >= 500;
+        if (!retryable || attempt === MAX_RETRIES) {
+          return { ok: false, error: e.message };
+        }
+        // Exponential backoff with jitter, same pattern as services/gemini.js.
+        const backoff = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+        console.warn(`Groq ${e.status}, retrying in ${Math.round(backoff)}ms`);
+        await sleep(backoff);
+      }
+    }
+  } finally {
+    fs.unlink(audioPath, () => {});
   }
 }
 
