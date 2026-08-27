@@ -788,6 +788,7 @@ const skipBtn=document.getElementById('skipBtn');
 function beginRecording(){
   phase='record';
   camBox.classList.add('rec');
+  if(stream) camBox.classList.add('on');
   startRecording();
   phaseText.textContent='Recording';statusText.textContent='● REC';
   camText.textContent=stream?'Live':'No feed';
@@ -811,10 +812,12 @@ function tickRecord(t){
   if(t<=0){
     phase='done';
     camBox.classList.remove('rec');
+    camBox.classList.remove('on');
     stopRecording();
+    setCamOffLabel('Recording done','Preview is off — submit below or start a new round.');
     setBox('live');timerNum.textContent='DONE';
     phaseText.textContent='Complete';statusText.textContent='DONE';
-    camText.textContent=stream?'Ready':'Off';
+    camText.textContent='Off';
     barFill.style.width='100%';
     stopBtn.disabled=true;
   }
@@ -903,6 +906,7 @@ async function submitTake(){
 
   show('ok','Sent · analysing…');
   sendBtn.textContent='Sent';
+  document.getElementById('report').scrollIntoView({behavior:'smooth',block:'start'});
   pollSession(json.sessionId,show);
 }
 
@@ -1042,24 +1046,40 @@ async function runDiag(){
 }
 
 async function enableCamera(){
-  camBtn.disabled=true;camBtn.textContent='Waiting…';
+  // Stream already granted — just re-show the preview, no permission prompt.
+  if(stream){
+    camBox.classList.add(‘on’);
+    camText.textContent=’Ready’;
+    return;
+  }
+  camBtn.disabled=true;camBtn.textContent=’Waiting…’;
   try{
     stream=await navigator.mediaDevices.getUserMedia({
       video:{width:{ideal:1280},height:{ideal:720}},
       audio:true
     });
     camVideo.srcObject=stream;
-    camBox.classList.add('on');
-    camText.textContent='Ready';
+    camBox.classList.add(‘on’);
+    camText.textContent=’Ready’;
     enterFocus();
   }catch(e){
-    camBtn.disabled=false;camBtn.textContent='Allow camera';
-    camOff.querySelector('span').textContent=
-      e.name==='NotAllowedError'
-        ? 'Access was blocked. Re-enable the camera in your browser’s address bar, then try again.'
-        : 'No camera found. The round still runs — you just won’t see a preview.';
-    camText.textContent='Blocked';
+    camBtn.disabled=false;camBtn.textContent=’Allow camera’;
+    camOff.querySelector(‘span’).textContent=
+      e.name===’NotAllowedError’
+        ? ‘Access was blocked. Re-enable the camera in your browser\’s address bar, then try again.’
+        : ‘No camera found. The round still runs — you just won\’t see a preview.’;
+    camText.textContent=’Blocked’;
   }
+}
+
+/* Update the camera-off panel text without touching the Allow button when
+   stream is already active — avoids "Allow camera" re-appearing confusingly. */
+function setCamOffLabel(heading, detail){
+  const h=camOff.querySelector('strong');
+  const d=camOff.querySelector('span');
+  if(h) h.textContent=heading;
+  if(d) d.textContent=detail;
+  camBtn.hidden=!!stream;     // hide "Allow camera" while stream is live
 }
 
 function pick(){let i;do{i=Math.floor(Math.random()*N)}while(i===last&&N>1);last=i;return i}
@@ -1129,11 +1149,13 @@ function stopEarly(){
     stopRecording();
     const done=recordedSeconds||0;
     camBox.classList.remove('rec');
+    camBox.classList.remove('on');
+    setCamOffLabel('Recording done','Preview is off — submit below or start a new round.');
     setBox('live');
     timerNum.textContent='STOPPED';
     phaseText.textContent='Stopped';
     statusText.textContent='STOPPED';
-    camText.textContent=stream?'Ready':'Off';
+    camText.textContent='Off';
     barFill.style.width=Math.min(done/RECORD*100,100)+'%';
     phase='done';
   }else{
@@ -1153,9 +1175,12 @@ function resetRound(){
   clearInterval(timerId);phase='idle';stopBtn.disabled=true;
   stopRecording();
   camBox.classList.remove('rec');
+  camBox.classList.remove('on');
+  setCamOffLabel('Camera is off','Grant access and the preview appears here. It turns on by itself when the thinking time runs out.');
+  camBtn.hidden=false;
   timerNum.textContent=fmt(RECORD);setBox('');barFill.style.width='0%';
   phaseText.textContent='Ready';statusText.textContent='READY';
-  camText.textContent=stream?'Ready':'Off';
+  camText.textContent='Off';
   topicText.classList.add('idle');
   topicText.textContent='Hit "Give me a topic" and the wheel decides. You don\'t get to skip.';
 }
