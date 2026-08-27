@@ -36,7 +36,7 @@ localhost.
 
 - Any backend
 - MediaRecorder — the camera previews but nothing is captured
-- Whisper transcription
+- Groq transcription
 - Gemini feedback
 - Accounts, database, storage
 
@@ -65,9 +65,9 @@ Copy the template and fill it in:
 cp .env.example .env
 ```
 
-`.env` is gitignored. The Gemini key is server-side only and must never
-appear in frontend code — anything shipped to the browser can be read from
-view-source.
+`.env` is gitignored. The Gemini and Groq keys are server-side only and must
+never appear in frontend code — anything shipped to the browser can be read
+from view-source. Get a Groq key at https://console.groq.com.
 
 Before your first push, run `git status` and confirm `.env` is not listed.
 A key that has been pushed is burned; revoke and regenerate rather than
@@ -78,7 +78,7 @@ deleting it in a later commit.
 ## Build order
 
 1. **The ugly loop** — MediaRecorder, upload, recording lands on the server
-2. **Metrics** — Whisper, filler counts, pace, pauses (no AI cost)
+2. **Metrics** — Groq transcription, filler counts, pace, pauses (no AI cost)
 3. **AI feedback** — job queue, Gemini, structured JSON
 4. **Load test** — 100 concurrent users, mocked model, queue depth
 

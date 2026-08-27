@@ -84,21 +84,25 @@ const upload = multer({
   }
 });
 
-const { spawn } = require('child_process');
 const { computeMetrics, gradeMetrics } = require('./services/metrics');
 const { getCoaching } = require('./services/gemini');
+const { transcribe } = require('./services/transcriber');
 
-const PYTHON = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
-const WHISPER_MODEL = process.env.WHISPER_MODEL || 'base.en';
+// Transcription is the only active path — every session fails without a
+// key, so fail loudly at boot instead of letting each one fail mysteriously.
+if (!process.env.GROQ_API_KEY) {
+  console.error('GROQ_API_KEY is not set. Get one at https://console.groq.com and add it to .env — see .env.example.');
+  process.exit(1);
+}
 
 /**
  * Transcribe and analyse a recording in the background.
  *
- * This deliberately does not block the upload response. Whisper takes
- * several seconds on CPU; the client gets its session id immediately and
- * polls for the result. The same pattern absorbs the Gemini call later.
+ * This deliberately does not block the upload response. Transcription takes
+ * a few seconds; the client gets its session id immediately and polls for
+ * the result. The same pattern absorbs the Gemini call later.
  */
-function processSession(sessionId, filePath, metaPath) {
+async function processSession(sessionId, filePath, metaPath) {
   const patch = (fields) => {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
@@ -110,73 +114,51 @@ function processSession(sessionId, filePath, metaPath) {
 
   patch({ status: 'transcribing' });
 
-  const py = spawn(PYTHON, [path.join(__dirname, 'transcribe.py'), filePath, WHISPER_MODEL]);
+  const result = await transcribe(filePath);
 
-  let out = '';
-  let err = '';
-  py.stdout.on('data', (d) => { out += d; });
-  py.stderr.on('data', (d) => { err += d; });
+  if (!result.ok) {
+    patch({ status: 'failed', error: result.error });
+    return console.error(`Transcription failed for ${sessionId}: ${result.error}`);
+  }
 
-  py.on('error', (e) => {
-    patch({ status: 'failed', error: `Could not run ${PYTHON}: ${e.message}` });
+  const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+  const metrics = computeMetrics(
+    result.words,
+    result.text,
+    meta.durationSec || result.durationSec,
+    Number(process.env.RECORD_SECONDS) || 90
+  );
+
+  patch({
+    status: 'analysed',
+    transcript: result.text,
+    language: result.language,
+    words: result.words,
+    metrics,
+    grades: gradeMetrics(metrics),
+    analysedAt: new Date().toISOString()
   });
 
-  py.on('close', (code) => {
-    if (code !== 0) {
-      patch({ status: 'failed', error: err.slice(-400) || `exit ${code}` });
-      return console.error(`Transcription failed for ${sessionId}: ${err.slice(-200)}`);
-    }
+  console.log(`Session ${sessionId} analysed — ${metrics.wordCount} words, ${metrics.fillerCount} fillers, ${metrics.wpm} wpm`);
 
-    let result;
-    try {
-      result = JSON.parse(out.trim().split('\n').pop());
-    } catch (_) {
-      return patch({ status: 'failed', error: 'Bad worker output' });
-    }
-
-    if (!result.ok) {
-      return patch({ status: 'failed', error: result.error });
-    }
-
-    const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-    const metrics = computeMetrics(
-      result.words,
-      result.text,
-      meta.durationSec || result.durationSec,
-      Number(process.env.RECORD_SECONDS) || 90
-    );
-
-    patch({
-      status: 'analysed',
-      transcript: result.text,
-      language: result.language,
-      words: result.words,
-      metrics,
-      grades: gradeMetrics(metrics),
-      analysedAt: new Date().toISOString()
-    });
-
-    console.log(`Session ${sessionId} analysed — ${metrics.wordCount} words, ${metrics.fillerCount} fillers, ${metrics.wpm} wpm`);
-
-    // Final stage: the model reads the numbers and explains them. Runs
-    // after the metrics are already saved, so a Gemini failure or a
-    // missing key never costs the user their report.
-    getCoaching({
-      topic: meta.topic,
-      transcript: result.text,
-      metrics,
-      history: recentHistory(sessionId)
+  // Final stage: the model reads the numbers and explains them. Runs
+  // after the metrics are already saved, so a Gemini failure or a
+  // missing key never costs the user their report.
+  getCoaching({
+    topic: meta.topic,
+    transcript: result.text,
+    metrics,
+    history: recentHistory(sessionId)
+  })
+    .then((coaching) => {
+      if (!coaching) return;
+      patch({ coaching, coachedAt: new Date().toISOString() });
+      console.log(`Session ${sessionId} coached`);
     })
-      .then((coaching) => {
-        if (!coaching) return;
-        patch({ coaching, coachedAt: new Date().toISOString() });
-        console.log(`Session ${sessionId} coached`);
-      })
-      .catch((e) => {
-        patch({ coachingError: e.message });
-        console.error(`Coaching failed for ${sessionId}:`, e.message);
-      });
-  });
+    .catch((e) => {
+      patch({ coachingError: e.message });
+      console.error(`Coaching failed for ${sessionId}:`, e.message);
+    });
 }
 
 /**

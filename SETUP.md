@@ -6,17 +6,10 @@
 npm install
 ```
 
-## 2. Install the transcription engine
+## 2. Get a Groq key for transcription
 
-```bash
-pip install faster-whisper
-```
-
-Verify:
-
-```bash
-python -c "import faster_whisper; print('OK')"
-```
+Create a key at https://console.groq.com — transcription runs entirely
+through the Groq API, so there is nothing to install locally.
 
 ## 3. Create your .env
 
@@ -24,15 +17,14 @@ python -c "import faster_whisper; print('OK')"
 cp .env.example .env      # Windows: copy .env.example .env
 ```
 
-Open `.env` and set your key from https://aistudio.google.com/apikey
+Open `.env` and set your keys:
 
 ```
 GEMINI_API_KEY=AIza...
+GROQ_API_KEY=gsk_...
 ```
 
 No quotes, no spaces around the `=`.
-
-If `python` is not your command, also set `PYTHON_BIN=python3`.
 
 **Check it is ignored by git before committing anything:**
 
@@ -54,9 +46,6 @@ The camera needs `localhost` or `https` — opening the HTML file
 directly will not work.
 
 ## First run
-
-The first recording you submit downloads the Whisper model (~150MB).
-Expect a wait. After that transcription takes a few seconds per clip.
 
 Watch the server console:
 
