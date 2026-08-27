@@ -920,6 +920,7 @@ async function pollSession(id,show){
       const r=await fetch(`/api/sessions/${id}`);
       const s=await r.json();
       if(s.status==='analysed'){
+        document.body.classList.remove('focus');
         renderReport(s);
         if(s.coaching){show('ok','Coaching ready');return}
         if(s.coachingError){show('ok','Analysis ready (no AI note)');return}
