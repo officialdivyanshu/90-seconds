@@ -830,14 +830,17 @@ async function submitTake(){
   sendBtn.disabled=true;
   show('','Uploading… 0%');
 
-  const fd=new FormData();
   const ext=(window.lastTake.type||'').includes('mp4')?'mp4':'webm';
-  fd.append('recording',window.lastTake,`take.${ext}`);
-  fd.append('topic',currentTopic||'');
-  fd.append('durationSec',String(recordedSeconds||0));
 
-  try{
-    const json=await new Promise((resolve,reject)=>{
+  /* Attempt one multipart upload. Resolves with parsed JSON on success.
+     Rejects with err.isHttp=true for HTTP-level failures (no retry),
+     plain Error for network-level failures (retriable). */
+  function multipartAttempt(){
+    return new Promise((resolve,reject)=>{
+      const fd=new FormData();
+      fd.append('recording',window.lastTake,`take.${ext}`);
+      fd.append('topic',currentTopic||'');
+      fd.append('durationSec',String(recordedSeconds||0));
       const xhr=new XMLHttpRequest();
       xhr.open('POST','/api/sessions');
       xhr.upload.onprogress=e=>{
@@ -846,21 +849,61 @@ async function submitTake(){
       xhr.onload=()=>{
         try{
           const d=JSON.parse(xhr.responseText);
-          xhr.status>=200&&xhr.status<300?resolve(d):reject(new Error(d.error||`HTTP ${xhr.status}`));
-        }catch(_){reject(new Error(`HTTP ${xhr.status}`))}
+          if(xhr.status>=200&&xhr.status<300){resolve(d)}
+          else{const e=new Error(d.error||`HTTP ${xhr.status}`);e.isHttp=true;reject(e)}
+        }catch(_){const e=new Error(`HTTP ${xhr.status}`);e.isHttp=true;reject(e)}
       };
-      xhr.onerror=()=>reject(new Error('Network error — is the server running?'));
-      xhr.ontimeout=()=>reject(new Error('Upload timed out'));
+      xhr.onerror=()=>reject(new Error('network'));
+      xhr.ontimeout=()=>reject(new Error('timeout'));
       xhr.timeout=120000;
       xhr.send(fd);
     });
-    show('ok',`Sent · analysing…`);
-    sendBtn.textContent='Sent';
-    pollSession(json.sessionId,show);
-  }catch(e){
-    show('err',e.message||'Upload failed');
-    sendBtn.disabled=false;
   }
+
+  /* Try multipart up to 3 times with 2 s / 4 s backoff. */
+  let json=null,networkFail=false;
+  for(let attempt=0;attempt<3;attempt++){
+    if(attempt>0){
+      show('',`Retrying… (${attempt+1}/3)`);
+      await new Promise(r=>setTimeout(r,attempt*2000));
+    }
+    try{
+      json=await multipartAttempt();
+      break;
+    }catch(e){
+      if(e.isHttp){show('err',e.message);sendBtn.disabled=false;return}
+      networkFail=true;
+    }
+  }
+
+  /* All multipart attempts failed at the network level — try raw binary. */
+  if(!json&&networkFail){
+    show('','Multipart failed — trying fallback upload…');
+    try{
+      const params=new URLSearchParams({
+        topic:currentTopic||'',
+        duration:String(recordedSeconds||0)
+      });
+      const r=await fetch(`/api/sessions/raw?${params}`,{
+        method:'POST',
+        headers:{'Content-Type':window.lastTake.type||'application/octet-stream'},
+        body:window.lastTake
+      });
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);
+      json=d;
+    }catch(e){
+      show('err',e.message||'Upload failed — check the server is running');
+      sendBtn.disabled=false;
+      return;
+    }
+  }
+
+  if(!json){show('err','Upload failed');sendBtn.disabled=false;return}
+
+  show('ok','Sent · analysing…');
+  sendBtn.textContent='Sent';
+  pollSession(json.sessionId,show);
 }
 
 /* Transcription takes a few seconds on CPU, so the upload response comes

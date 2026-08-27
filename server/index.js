@@ -46,11 +46,13 @@ try {
    first thing to fall over under concurrent load.
 ------------------------------------------------------------------ */
 
+const PROJECT_ROOT = path.join(__dirname, '..');
 const UPLOAD_DIR = process.env.UPLOAD_DIR
-  ? path.resolve(process.env.UPLOAD_DIR)
-  : path.join(__dirname, '..', 'uploads');
+  ? path.resolve(PROJECT_ROOT, process.env.UPLOAD_DIR)
+  : path.join(PROJECT_ROOT, 'uploads');
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+console.log(`Uploads → ${UPLOAD_DIR}`);
 
 const MAX_MB = Number(process.env.MAX_UPLOAD_MB) || 50;
 
@@ -69,8 +71,16 @@ const upload = multer({
   storage,
   limits: { fileSize: MAX_MB * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
-    const ok = /^video\/(webm|mp4)/.test(file.mimetype || '');
-    cb(ok ? null : new Error('Only webm or mp4 recordings are accepted'), ok);
+    // Browsers send things like "video/webm;codecs=vp9,opus" and Safari
+    // sends mp4 variants. Accept any video/* and let the transcriber be
+    // the thing that complains if the container is unusable.
+    const mt = file.mimetype || '';
+    console.log(`Upload incoming: ${file.originalname} (${mt})`);
+    if (/^video\//.test(mt) || /^audio\//.test(mt) || mt === 'application/octet-stream') {
+      return cb(null, true);
+    }
+    console.warn(`Rejected upload with mimetype: ${mt}`);
+    cb(new Error(`Unsupported type: ${mt}`), false);
   }
 });
 
@@ -203,7 +213,12 @@ function recentHistory(excludeId, limit = 5) {
    Middleware
 ------------------------------------------------------------------ */
 
-app.use(express.json());
+// Scoped deliberately: applying express.json() to every request means it
+// inspects multipart upload streams too, which can interfere with multer.
+app.use((req, res, next) => {
+  if ((req.headers['content-type'] || '').startsWith('multipart/')) return next();
+  express.json({ limit: '1mb' })(req, res, next);
+});
 app.use(express.static(PUBLIC_DIR));
 
 /* ------------------------------------------------------------------
@@ -236,15 +251,43 @@ app.get('/api/topics', (req, res) => {
 
 /* A recording the user has reviewed and chosen to submit.
    Only takes that reach here will ever cost a model call. */
+/* Diagnostic: accepts a POST body and reports what arrived. Bypasses
+   multer entirely, so it separates "the connection dies" from "multer
+   rejects it". Visit /api/echo-test from the browser console. */
+app.post('/api/echo', (req, res) => {
+  let bytes = 0;
+  console.log(`ECHO: request started, content-length=${req.headers['content-length'] || '?'}`);
+
+  req.on('data', (chunk) => { bytes += chunk.length; });
+
+  req.on('aborted', () => {
+    console.error(`ECHO: client aborted after ${bytes} bytes`);
+  });
+
+  req.on('error', (e) => {
+    console.error(`ECHO: stream error after ${bytes} bytes — ${e.message}`);
+  });
+
+  req.on('end', () => {
+    console.log(`ECHO: received ${bytes} bytes successfully`);
+    res.json({ ok: true, bytes });
+  });
+});
+
 app.post('/api/sessions', (req, res) => {
+  console.log(`POST /api/sessions — ${req.headers['content-length'] || '?'} bytes declared`);
   upload.single('recording')(req, res, (err) => {
     if (err) {
+      console.error('Upload failed:', err.code || '', err.message);
       const tooBig = err.code === 'LIMIT_FILE_SIZE';
       return res.status(tooBig ? 413 : 400).json({
         error: tooBig ? `Recording exceeds ${MAX_MB}MB` : err.message
       });
     }
-    if (!req.file) return res.status(400).json({ error: 'No recording received' });
+    if (!req.file) {
+      console.error('Upload failed: no file in request');
+      return res.status(400).json({ error: 'No recording received' });
+    }
 
     const session = {
       sessionId: req.sessionId,
@@ -273,6 +316,76 @@ app.post('/api/sessions', (req, res) => {
     setImmediate(() => {
       processSession(req.sessionId, req.file.path, metaPath);
     });
+  });
+});
+
+/* Fallback for when multipart/form-data is rejected mid-stream (e.g.
+   Chrome's ERR_CONNECTION_RESET on some Windows paths). The client sends
+   the raw video blob as the request body; topic and duration come in as
+   query params. No multer, so nothing can reject the content-type. */
+app.post('/api/sessions/raw', (req, res) => {
+  const mime = req.headers['content-type'] || 'application/octet-stream';
+  const ext  = mime.includes('mp4') ? 'mp4' : 'webm';
+  const sessionId = crypto.randomUUID();
+  const filename  = `${sessionId}.${ext}`;
+  const filePath  = path.join(UPLOAD_DIR, filename);
+  const topic     = String(req.query.topic    || '').slice(0, 300);
+  const durationSec = Number(req.query.duration) || null;
+  const maxBytes  = MAX_MB * 1024 * 1024;
+
+  console.log(`POST /api/sessions/raw — declared ${req.headers['content-length'] || '?'} bytes, mime: ${mime}`);
+
+  let received = 0;
+  let capped   = false;
+  const out = fs.createWriteStream(filePath);
+
+  req.on('data', (chunk) => {
+    received += chunk.length;
+    if (received > maxBytes && !capped) {
+      capped = true;
+      req.destroy();
+      out.destroy();
+      try { fs.unlinkSync(filePath); } catch (_) {}
+      if (!res.headersSent) res.status(413).json({ error: `Recording exceeds ${MAX_MB}MB` });
+    }
+  });
+
+  req.on('error', (err) => {
+    console.error(`Raw upload stream error after ${received} bytes: ${err.message}`);
+    out.destroy();
+    try { fs.unlinkSync(filePath); } catch (_) {}
+    if (!res.headersSent) res.status(500).json({ error: 'Upload stream error' });
+  });
+
+  out.on('error', (err) => {
+    console.error(`Raw upload write error: ${err.message}`);
+    if (!res.headersSent) res.status(500).json({ error: 'Could not write recording' });
+  });
+
+  req.pipe(out);
+
+  out.on('finish', () => {
+    if (capped) return;
+
+    const session = {
+      sessionId, file: filename, bytes: received,
+      topic, durationSec,
+      receivedAt: new Date().toISOString(),
+      status: 'uploaded', via: 'raw'
+    };
+
+    const metaPath = path.join(UPLOAD_DIR, `${sessionId}.json`);
+    try {
+      fs.writeFileSync(metaPath, JSON.stringify(session, null, 2));
+    } catch (writeErr) {
+      console.error('Metadata write failed:', writeErr.message);
+      return res.status(500).json({ error: 'Could not save session' });
+    }
+
+    console.log(`Session ${sessionId} (raw) — ${(received / 1048576).toFixed(1)}MB`);
+    res.status(201).json(session);
+
+    setImmediate(() => processSession(sessionId, filePath, metaPath));
   });
 });
 
@@ -308,6 +421,31 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Server error' });
 });
 
-app.listen(PORT, () => {
+process.on('uncaughtException', (e) => {
+  console.error('UNCAUGHT:', e);
+});
+process.on('unhandledRejection', (e) => {
+  console.error('UNHANDLED REJECTION:', e);
+});
+
+const server = app.listen(PORT, () => {
   console.log(`\n  90SECONDS running at http://localhost:${PORT}\n`);
+});
+
+// Chrome holds the TCP connection open for reuse. Node's default
+// keepAliveTimeout (5 s) can race the upload on Windows loopback paths
+// where the first send stalls. headersTimeout must exceed keepAliveTimeout.
+server.keepAliveTimeout = 65000;
+server.headersTimeout   = 66000;
+server.requestTimeout   = 0;     // no per-request deadline
+
+server.on('clientError', (err, socket) => {
+  console.error(`clientError [${err.code || err.message}]`);
+  if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+});
+
+server.on('connection', (socket) => {
+  socket.on('error', (err) => {
+    console.error(`Socket error: ${err.code || err.message}`);
+  });
 });
