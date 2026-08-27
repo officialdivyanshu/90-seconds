@@ -1048,27 +1048,27 @@ async function runDiag(){
 async function enableCamera(){
   // Stream already granted — just re-show the preview, no permission prompt.
   if(stream){
-    camBox.classList.add(‘on’);
-    camText.textContent=’Ready’;
+    camBox.classList.add('on');
+    camText.textContent='Ready';
     return;
   }
-  camBtn.disabled=true;camBtn.textContent=’Waiting…’;
+  camBtn.disabled=true;camBtn.textContent='Waiting…';
   try{
     stream=await navigator.mediaDevices.getUserMedia({
       video:{width:{ideal:1280},height:{ideal:720}},
       audio:true
     });
     camVideo.srcObject=stream;
-    camBox.classList.add(‘on’);
-    camText.textContent=’Ready’;
+    camBox.classList.add('on');
+    camText.textContent='Ready';
     enterFocus();
   }catch(e){
-    camBtn.disabled=false;camBtn.textContent=’Allow camera’;
-    camOff.querySelector(‘span’).textContent=
-      e.name===’NotAllowedError’
-        ? ‘Access was blocked. Re-enable the camera in your browser\’s address bar, then try again.’
-        : ‘No camera found. The round still runs — you just won\’t see a preview.’;
-    camText.textContent=’Blocked’;
+    camBtn.disabled=false;camBtn.textContent='Allow camera';
+    camOff.querySelector('span').textContent=
+      e.name==='NotAllowedError'
+        ? 'Access was blocked. Re-enable the camera in your browser\'s address bar, then try again.'
+        : 'No camera found. The round still runs — you just won\'t see a preview.';
+    camText.textContent='Blocked';
   }
 }
 
