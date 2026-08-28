@@ -21,6 +21,10 @@
   --shadow-3:12px 12px 0 var(--ink);
 }
 *{margin:0;padding:0;box-sizing:border-box}
+/* .btn sets display:inline-flex, which has equal specificity to the UA
+   [hidden]{display:none} rule and wins by cascade order — without this,
+   hidden buttons (e.g. #skipBtn, #camBtn) stay visibly rendered. */
+[hidden]{display:none!important}
 html{scroll-behavior:smooth}
 body{
   background:var(--paper);
@@ -345,10 +349,24 @@ footer{padding:26px 0;font-family:'JetBrains Mono',monospace;font-size:12px;lett
   .step:last-child{border-bottom:var(--stroke)}
   .state-box{width:120px}
   #timerNum{font-size:48px}
-  .hero-in{min-height:calc(100svh - 68px - 40px);padding:40px 20px 44px}
+  .hero-in{width:100%;min-height:calc(100svh - 68px - 40px);padding:40px 20px 44px}
   body.focus .wheel-wrap{max-width:150px}
   body.focus .app-in{padding:14px 12px 24px}
   .review-row .btn{min-width:100%}
+}
+/* Camera placeholder text needs more room than a strict 16:9 box gives
+   once the box is this narrow — only the "off" state is relaxed, so the
+   live video preview keeps its normal aspect ratio. */
+@media(max-width:480px){
+  .cam-box:not(.on){aspect-ratio:auto;min-height:230px}
+  .demo-actions .btn{font-size:13px;padding:12px 10px}
+}
+/* Below ~375px the nav CTA wraps to two lines and, because .nav-in has a
+   fixed height, spills out and overlaps the hero heading beneath it. */
+@media(max-width:374px){
+  .nav-in{height:auto;min-height:60px;padding:10px 0}
+  .logo{font-size:17px}
+  .nav-links .btn{padding:9px 12px;font-size:11px;letter-spacing:0.03em;min-height:36px}
 }
 </style>
 </head>
@@ -370,7 +388,6 @@ footer{padding:26px 0;font-family:'JetBrains Mono',monospace;font-size:12px;lett
 
 <header class="hero">
   <div class="wrap hero-in">
-    <span class="eyebrow">Prototype / v0.1</span>
     <h1>You get a topic.<br>You get <span class="h1-hl">90 seconds.</span><br>Camera rolls.</h1>
     <p class="lede">Thirty seconds to think. Ninety to talk. No script, no second take — then you get told exactly what to fix.</p>
     <div class="hero-cta">
@@ -593,12 +610,6 @@ footer{padding:26px 0;font-family:'JetBrains Mono',monospace;font-size:12px;lett
   </div>
 </section>
 
-<div class="wrap">
-  <footer>
-    <span>90SECONDS — frontend prototype</span>
-    <span>Neo-brutalist / no backend yet</span>
-  </footer>
-</div>
 
 <script>
 /* Fallback used only if the server is unreachable, so the page still
