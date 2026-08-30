@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +54,34 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 console.log(`Uploads → ${UPLOAD_DIR}`);
+
+// Render's free tier disk is ephemeral and small — recordings and their
+// metadata are only ever needed for the few minutes it takes to analyse
+// them, so anything older than an hour is stale and safe to delete.
+const UPLOAD_MAX_AGE_MS = 60 * 60 * 1000;
+
+function cleanupOldUploads() {
+  let removed = 0;
+  const now = Date.now();
+  let files;
+  try {
+    files = fs.readdirSync(UPLOAD_DIR);
+  } catch (e) {
+    return console.error('Upload cleanup could not list directory:', e.message);
+  }
+  for (const file of files) {
+    const filePath = path.join(UPLOAD_DIR, file);
+    try {
+      if (now - fs.statSync(filePath).mtimeMs > UPLOAD_MAX_AGE_MS) {
+        fs.unlinkSync(filePath);
+        removed++;
+      }
+    } catch (_) {}
+  }
+  if (removed) console.log(`Upload cleanup: removed ${removed} file(s) older than 1 hour`);
+}
+cleanupOldUploads();
+setInterval(cleanupOldUploads, 15 * 60 * 1000).unref();
 
 const MAX_MB = Number(process.env.MAX_UPLOAD_MB) || 50;
 
@@ -194,6 +223,17 @@ function recentHistory(excludeId, limit = 5) {
 /* ------------------------------------------------------------------
    Middleware
 ------------------------------------------------------------------ */
+
+// The frontend is deployed separately (Netlify) from this API (Render),
+// so cross-origin requests are the normal case, not the exception.
+// ALLOWED_ORIGINS is a comma-separated allowlist; unset means allow any
+// origin, which is fine for an API with no cookie/session auth.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const corsOptions = { origin: ALLOWED_ORIGINS.includes('*') ? '*' : ALLOWED_ORIGINS };
+app.use('/api', cors(corsOptions));
 
 // Scoped deliberately: applying express.json() to every request means it
 // inspects multipart upload streams too, which can interfere with multer.
@@ -414,7 +454,9 @@ process.on('unhandledRejection', (e) => {
   console.error('UNHANDLED REJECTION:', e);
 });
 
-const server = app.listen(PORT, () => {
+// 0.0.0.0, not the loopback-only default, so Render's health check (which
+// connects from outside the container) can actually reach the port.
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n  90SECONDS running at http://localhost:${PORT}\n`);
 });
 

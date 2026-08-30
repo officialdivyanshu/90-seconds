@@ -612,17 +612,28 @@ footer{padding:26px 0;font-family:'JetBrains Mono',monospace;font-size:12px;lett
 
 
 <script>
+/* Set by the hosting page (e.g. window.API_BASE = "https://api.example.com")
+   when the frontend is deployed separately from the backend, such as
+   Netlify + Render. Empty string means same-origin, which is what local
+   development uses unchanged. */
+const API_BASE=window.API_BASE||'';
+
+/* Render's free tier sleeps an idle instance; firing this now instead of
+   waiting for the actual upload means it's usually awake well before the
+   user finishes recording. Result is ignored either way. */
+fetch(`${API_BASE}/api/health`).catch(()=>{});
+
 /* Fallback used only if the server is unreachable, so the page still
    works when opened as a static file. */
 const FALLBACK_TOPICS=[
   "The last film that genuinely surprised you",
   "Sell me on a hobby you're bad at",
   "Explain the internet to someone from 1850",
-  "A rule you follow that nobody asked you to",
+  "A character you'd want as a friend, and why",
   "The most overrated food, and be specific",
-  "Teach me something in thirty seconds",
-  "Defend a movie everyone else hated",
-  "The worst advice you were ever given",
+  "Teach me the rules of a game you love",
+  "Something everyone praises that you find overrated",
+  "A skill you'd learn if you had a free month",
   "Convince me to read your favourite book",
   "One thing you've changed your mind about"
 ];
@@ -670,7 +681,7 @@ drawWheel();
    hardcoded list if there is no server, so the page never breaks. */
 async function loadTopics(){
   try{
-    const r=await fetch('/api/topics?count=10');
+    const r=await fetch(`${API_BASE}/api/topics?count=10`);
     if(!r.ok)return;
     const data=await r.json();
     if(Array.isArray(data.topics)&&data.topics.length){
@@ -856,7 +867,7 @@ async function submitTake(){
       fd.append('topic',currentTopic||'');
       fd.append('durationSec',String(recordedSeconds||0));
       const xhr=new XMLHttpRequest();
-      xhr.open('POST','/api/sessions');
+      xhr.open('POST',`${API_BASE}/api/sessions`);
       xhr.upload.onprogress=e=>{
         if(e.lengthComputable)show('',`Uploading… ${Math.round(e.loaded/e.total*100)}%`);
       };
@@ -898,7 +909,7 @@ async function submitTake(){
         topic:currentTopic||'',
         duration:String(recordedSeconds||0)
       });
-      const r=await fetch(`/api/sessions/raw?${params}`,{
+      const r=await fetch(`${API_BASE}/api/sessions/raw?${params}`,{
         method:'POST',
         headers:{'Content-Type':window.lastTake.type||'application/octet-stream'},
         body:window.lastTake
@@ -928,7 +939,7 @@ async function pollSession(id,show){
   const tick=async()=>{
     if(Date.now()-started>180000){show('err','Analysis timed out');return}
     try{
-      const r=await fetch(`/api/sessions/${id}`);
+      const r=await fetch(`${API_BASE}/api/sessions/${id}`);
       const s=await r.json();
       if(s.status==='analysed'){
         document.body.classList.remove('focus');
