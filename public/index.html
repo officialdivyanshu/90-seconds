@@ -710,7 +710,14 @@ const wheel=document.getElementById('wheel'),
       camBtn=document.getElementById('camBtn');
 
 const THINK=30, RECORD=90;
-let recorder=null,chunks=[],lastUrl=null,currentTopic='',recordedSeconds=0,recStart=0;
+/* Video and audio are recorded (and stopped) together from the same
+   underlying stream, but only the audio blob is ever uploaded — a 30MB
+   video takes minutes on a slow connection, while a 90s 64kbps audio
+   clip is under 1MB and uploads in seconds. The video blob stays local,
+   for playback and the download button only. */
+let videoRecorder=null,audioRecorder=null,videoChunks=[],audioChunks=[];
+let videoBlob=null,audioBlob=null,audioUnavailable=false;
+let lastUrl=null,currentTopic='',recordedSeconds=0,recStart=0;
 const playbackWrap=document.getElementById('playbackWrap'),
       playback=document.getElementById('playback'),
       playSize=document.getElementById('playSize'),
@@ -725,65 +732,138 @@ function pickMime(){
   return '';
 }
 
+/* Opus at 64kbps mono-ish is plenty for Whisper transcription and keeps
+   the upload tiny. */
+function pickAudioMime(){
+  const c=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'];
+  for(const m of c){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m))return m}
+  return '';
+}
+
+/* Recomputed from current state every time either recorder settles, so
+   it's always correct regardless of which one finishes first. */
+function updateReviewPanel(){
+  const parts=[];
+  if(videoBlob)parts.push(`Video ${(videoBlob.size/1048576).toFixed(1)} MB (stays on your device)`);
+  if(audioBlob)parts.push(`Audio ${(audioBlob.size/1048576).toFixed(1)} MB (uploaded)`);
+  else if(audioUnavailable)parts.push('Audio unavailable — feedback disabled for this take');
+  else parts.push('Audio processing…');
+  const partial=recordedSeconds&&recordedSeconds<RECORD-1;
+  playSize.textContent=parts.join(' · ')+` · ${fmt(recordedSeconds||0)}`+(partial?' · STOPPED EARLY':'');
+
+  const sendBtn=document.getElementById('sendBtn');
+  if(sendBtn)sendBtn.disabled=!!audioUnavailable;
+
+  if(audioUnavailable){
+    const msg=document.getElementById('uploadMsg');
+    if(msg){
+      msg.hidden=false;
+      msg.className='err';
+      msg.textContent="No audio was captured for this take — feedback isn't available. The video is still saved to your device; record again to get a report.";
+    }
+  }
+}
+
 function startRecording(){
   if(!stream||!window.MediaRecorder)return;
-  chunks=[];
+  videoChunks=[];audioChunks=[];videoBlob=null;audioBlob=null;audioUnavailable=false;
+
   const mime=pickMime();
   try{
-    recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
-  }catch(e){recorder=null;return}
+    videoRecorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+  }catch(e){videoRecorder=null;return}
 
-  /* Capture the type now. stopRecording() nulls `recorder` synchronously,
-     but onstop fires a tick later — reading recorder.mimeType in there
-     would throw and silently kill the playback. */
-  const recType=recorder.mimeType||mime||'video/webm';
-  const rec=recorder;
+  /* Capture the type now. stopRecording() nulls the recorder synchronously,
+     but onstop fires a tick later — reading its mimeType in there would
+     throw and silently kill the playback. */
+  const videoType=videoRecorder.mimeType||mime||'video/webm';
+  const vRec=videoRecorder;
 
-  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
-  rec.onstop=()=>{
-    if(!chunks.length){
-      console.warn('No data captured');
+  vRec.ondataavailable=e=>{if(e.data&&e.data.size)videoChunks.push(e.data)};
+  vRec.onstop=()=>{
+    if(!videoChunks.length){
+      console.warn('No video data captured');
       return;
     }
-    const blob=new Blob(chunks,{type:recType});
+    const blob=new Blob(videoChunks,{type:videoType});
     if(lastUrl)URL.revokeObjectURL(lastUrl);
     lastUrl=URL.createObjectURL(blob);
     playback.src=lastUrl;
-    const ext=recType.includes('mp4')?'mp4':'webm';
+    const ext=videoType.includes('mp4')?'mp4':'webm';
     dlBtn.href=lastUrl;
     dlBtn.download=`take-${Date.now()}.${ext}`;
-    const partial=recordedSeconds&&recordedSeconds<RECORD-1;
-    playSize.textContent=
-      `${(blob.size/1048576).toFixed(1)} MB · ${fmt(recordedSeconds||0)}` +
-      (partial?' · STOPPED EARLY':'');
+    videoBlob=blob;
     playbackWrap.hidden=false;
     requestAnimationFrame(()=>{
       playbackWrap.scrollIntoView({behavior:'smooth',block:'center'});
     });
-    window.lastTake=blob;
+    updateReviewPanel();
   };
-  rec.start(1000);
+  vRec.start(1000);
   recStart=Date.now();
+
+  /* Audio-only recorder fed a separate MediaStream built from just the
+     source stream's audio tracks — this, not the video, is what actually
+     gets uploaded. */
+  const audioTracks=stream.getAudioTracks();
+  if(!audioTracks.length){
+    audioRecorder=null;
+    audioUnavailable=true;
+    return;
+  }
+  try{
+    const audioStream=new MediaStream(audioTracks);
+    const audioMime=pickAudioMime();
+    audioRecorder=audioMime
+      ?new MediaRecorder(audioStream,{mimeType:audioMime,audioBitsPerSecond:64000})
+      :new MediaRecorder(audioStream,{audioBitsPerSecond:64000});
+  }catch(e){
+    audioRecorder=null;
+    audioUnavailable=true;
+    return;
+  }
+
+  const audioType=audioRecorder.mimeType||'audio/webm';
+  const aRec=audioRecorder;
+  aRec.ondataavailable=e=>{if(e.data&&e.data.size)audioChunks.push(e.data)};
+  aRec.onstop=()=>{
+    if(audioChunks.length){
+      audioBlob=new Blob(audioChunks,{type:audioType});
+    }else{
+      console.warn('No audio data captured');
+      audioUnavailable=true;
+    }
+    updateReviewPanel();
+  };
+  try{
+    aRec.start(1000);
+  }catch(e){
+    audioRecorder=null;
+    audioUnavailable=true;
+  }
 }
 
 function stopRecording(){
-  if(recorder&&recorder.state!=='inactive'){
+  const active=[videoRecorder,audioRecorder].filter(r=>r&&r.state!=='inactive');
+  if(active.length){
     recordedSeconds=Math.round((Date.now()-recStart)/1000);
-    const r=recorder;
-    recorder=null;
-    try{
-      /* requestData fires ondataavailable asynchronously, so give it a
-         tick to land before stop() finalises the blob. */
-      if(r.state==='recording'&&r.requestData){
-        r.requestData();
-        setTimeout(()=>{try{r.stop()}catch(e){}},60);
-      }else{
-        r.stop();
-      }
-    }catch(e){try{r.stop()}catch(_){}}
+    videoRecorder=null;audioRecorder=null;
+    active.forEach(r=>{
+      try{
+        /* requestData fires ondataavailable asynchronously, so give it a
+           tick to land before stop() finalises the blob — otherwise an
+           early stop loses the last second or so of the take. */
+        if(r.state==='recording'&&r.requestData){
+          r.requestData();
+          setTimeout(()=>{try{r.stop()}catch(e){}},60);
+        }else{
+          r.stop();
+        }
+      }catch(e){try{r.stop()}catch(_){}}
+    });
     return;
   }
-  recorder=null;
+  videoRecorder=null;audioRecorder=null;
 }
 
 /* Review gate: nothing reaches the backend until the user approves the
@@ -850,20 +930,20 @@ async function submitTake(){
   const sendBtn=document.getElementById('sendBtn');
   const show=(cls,text)=>{msg.hidden=false;msg.className=cls;msg.textContent=text};
 
-  if(!window.lastTake){show('err','No recording to send');return}
+  if(!videoBlob){show('err','No recording to send');return}
+  if(!audioBlob){show('err',"No audio was captured for this take — feedback isn't available. Record again to get a report.");return}
 
   sendBtn.disabled=true;
   show('','Uploading… 0%');
 
-  const ext=(window.lastTake.type||'').includes('mp4')?'mp4':'webm';
-
   /* Attempt one multipart upload. Resolves with parsed JSON on success.
      Rejects with err.isHttp=true for HTTP-level failures (no retry),
-     plain Error for network-level failures (retriable). */
+     plain Error for network-level failures (retriable). Only the audio
+     blob is ever sent — the video never leaves the browser. */
   function multipartAttempt(){
     return new Promise((resolve,reject)=>{
       const fd=new FormData();
-      fd.append('recording',window.lastTake,`take.${ext}`);
+      fd.append('recording',audioBlob,'take-audio.webm');
       fd.append('topic',currentTopic||'');
       fd.append('durationSec',String(recordedSeconds||0));
       const xhr=new XMLHttpRequest();
@@ -911,8 +991,8 @@ async function submitTake(){
       });
       const r=await fetch(`${API_BASE}/api/sessions/raw?${params}`,{
         method:'POST',
-        headers:{'Content-Type':window.lastTake.type||'application/octet-stream'},
-        body:window.lastTake
+        headers:{'Content-Type':audioBlob.type||'audio/webm'},
+        body:audioBlob
       });
       const d=await r.json();
       if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);

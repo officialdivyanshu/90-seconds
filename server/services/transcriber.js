@@ -6,10 +6,14 @@
  * hosted Whisper endpoint. Returns the exact same shape the Python worker
  * used to, so metrics/grading/Gemini downstream need no changes.
  *
- * Groq caps uploads at ~25MB and only needs the audio track. A 90-second
- * 720p webm can be 10-15MB on its own, so the video is transcoded down to
- * mono 16kHz/64kbps audio first — Whisper downsamples to 16kHz internally
- * anyway, so anything higher is wasted bytes.
+ * The client now records and uploads audio separately from video (see
+ * public/index.html), so the common case arrives as a sub-1MB audio/webm
+ * file that Groq accepts directly — no ffmpeg needed. The video/* path is
+ * kept only as a fallback (e.g. server/transcribe.py callers, or a client
+ * that couldn't split streams): Groq caps uploads at ~25MB and only needs
+ * the audio track, so a video is transcoded down to mono 16kHz/64kbps
+ * audio first — Whisper downsamples to 16kHz internally anyway, so
+ * anything higher is wasted bytes.
  */
 
 const fs = require('fs');
@@ -48,10 +52,10 @@ function transcodeToAudio(filePath) {
   });
 }
 
-async function callGroq(audioPath, apiKey) {
+async function callGroq(audioPath, apiKey, contentType) {
   const buffer = fs.readFileSync(audioPath);
   const form = new FormData();
-  form.append('file', new Blob([buffer], { type: 'audio/mpeg' }), path.basename(audioPath));
+  form.append('file', new Blob([buffer], { type: contentType }), path.basename(audioPath));
   form.append('model', MODEL);
   form.append('response_format', 'verbose_json');
   form.append('timestamp_granularities[]', 'word');
@@ -72,33 +76,46 @@ async function callGroq(audioPath, apiKey) {
 
 /**
  * @param {string} filePath
+ * @param {string} [mimetype] The upload's original mimetype. audio/* skips
+ *   the ffmpeg extraction step entirely; anything else (or omitted) is
+ *   treated as video and transcoded first.
  * @returns {Promise<{ok: boolean, text?: string, durationSec?: number, language?: string, words?: {w: string, start: number, end: number}[], error?: string}>}
  */
-async function transcribe(filePath) {
+async function transcribe(filePath, mimetype) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return { ok: false, error: 'GROQ_API_KEY is not set' };
   }
 
-  let audioPath;
-  try {
-    audioPath = await transcodeToAudio(filePath);
-  } catch (e) {
-    return { ok: false, error: `Audio extraction failed: ${e.message}` };
+  const isAudio = (mimetype || '').startsWith('audio/');
+
+  let audioPath = filePath;
+  let contentType = mimetype || 'audio/webm';
+
+  if (!isAudio) {
+    try {
+      audioPath = await transcodeToAudio(filePath);
+      contentType = 'audio/mpeg';
+    } catch (e) {
+      return { ok: false, error: `Audio extraction failed: ${e.message}` };
+    }
   }
 
   try {
-    const videoBytes = fs.statSync(filePath).size;
     const audioBytes = fs.statSync(audioPath).size;
-    console.log(`Audio extracted: ${mb(videoBytes)}MB video → ${mb(audioBytes)}MB audio`);
+    if (isAudio) {
+      console.log(`Audio upload: ${mb(audioBytes)}MB (no extraction needed)`);
+    } else {
+      console.log(`Audio extracted: ${mb(fs.statSync(filePath).size)}MB video → ${mb(audioBytes)}MB audio`);
+    }
 
     if (audioBytes > MAX_AUDIO_BYTES) {
-      return { ok: false, error: `Extracted audio is ${mb(audioBytes)}MB, over Groq's 25MB upload limit` };
+      return { ok: false, error: `Audio is ${mb(audioBytes)}MB, over Groq's 25MB upload limit` };
     }
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const data = await callGroq(audioPath, apiKey);
+        const data = await callGroq(audioPath, apiKey, contentType);
 
         const words = (data.words || [])
           .map((w) => ({
@@ -127,7 +144,9 @@ async function transcribe(filePath) {
       }
     }
   } finally {
-    fs.unlink(audioPath, () => {});
+    // Only the transcoded copy is a temp file we own; the original upload
+    // is cleaned up on its own schedule by the upload-cleanup routine.
+    if (!isAudio) fs.unlink(audioPath, () => {});
   }
 }
 

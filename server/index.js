@@ -83,7 +83,11 @@ function cleanupOldUploads() {
 cleanupOldUploads();
 setInterval(cleanupOldUploads, 15 * 60 * 1000).unref();
 
-const MAX_MB = Number(process.env.MAX_UPLOAD_MB) || 50;
+// The client uploads audio only now (~1MB for a 90s take at 64kbps) — video
+// never leaves the browser. video/* is kept accepted as a fallback path
+// (see transcriber.js), so the ceiling still needs headroom for a full
+// recording, just not the old 50MB sized for routine video uploads.
+const MAX_MB = Number(process.env.MAX_UPLOAD_MB) || 40;
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -100,9 +104,10 @@ const upload = multer({
   storage,
   limits: { fileSize: MAX_MB * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
-    // Browsers send things like "video/webm;codecs=vp9,opus" and Safari
-    // sends mp4 variants. Accept any video/* and let the transcriber be
-    // the thing that complains if the container is unusable.
+    // Browsers send things like "audio/webm;codecs=opus" for the normal
+    // audio-only upload, or "video/webm;codecs=vp9,opus" for the video
+    // fallback path. Accept either and let the transcriber be the thing
+    // that complains if the container is unusable.
     const mt = file.mimetype || '';
     console.log(`Upload incoming: ${file.originalname} (${mt})`);
     if (/^video\//.test(mt) || /^audio\//.test(mt) || mt === 'application/octet-stream') {
@@ -131,7 +136,7 @@ if (!process.env.GROQ_API_KEY) {
  * a few seconds; the client gets its session id immediately and polls for
  * the result. The same pattern absorbs the Gemini call later.
  */
-async function processSession(sessionId, filePath, metaPath) {
+async function processSession(sessionId, filePath, metaPath, mimetype) {
   const patch = (fields) => {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
@@ -143,7 +148,7 @@ async function processSession(sessionId, filePath, metaPath) {
 
   patch({ status: 'transcribing' });
 
-  const result = await transcribe(filePath);
+  const result = await transcribe(filePath, mimetype);
 
   if (!result.ok) {
     patch({ status: 'failed', error: result.error });
@@ -339,7 +344,7 @@ app.post('/api/sessions', (req, res) => {
 
     // Fire and forget. The client polls GET /api/sessions/:id for the result.
     setImmediate(() => {
-      processSession(req.sessionId, req.file.path, metaPath);
+      processSession(req.sessionId, req.file.path, metaPath, req.file.mimetype);
     });
   });
 });
@@ -411,7 +416,7 @@ app.post('/api/sessions/raw', (req, res) => {
     res.setHeader('Connection', 'close');
     res.status(201).json(session);
 
-    setImmediate(() => processSession(sessionId, filePath, metaPath));
+    setImmediate(() => processSession(sessionId, filePath, metaPath, mime));
   });
 });
 
